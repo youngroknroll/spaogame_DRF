@@ -2,7 +2,6 @@
 회원가입 테스트
 """
 import pytest
-from django.contrib.auth import get_user_model
 
 
 @pytest.mark.django_db
@@ -17,4 +16,25 @@ def test_사용자는_필수정보를_입력하면_회원가입할_수_있다(si
     
     # Then
     assert response.status_code == 201
-    assert get_user_model().objects.filter(email=valid_signup_payload["email"]).exists()
+    assert response.data["email"] == valid_signup_payload["email"]
+    assert response.data["name"] == valid_signup_payload["name"]
+    assert "password" not in response.data
+
+
+@pytest.mark.django_db
+def test_이미_가입된_이메일로는_회원가입할_수_없다(signup, valid_signup_payload):
+    """
+    Given: 이미 가입된 이메일이 존재하고
+    When: 동일한 이메일로 다시 회원가입을 시도하면
+    Then: 회원가입이 실패한다
+    """
+    # Given: 첫 번째 회원가입 (성공)
+    first_response = signup(valid_signup_payload)
+    assert first_response.status_code == 201
+    
+    # When: 동일한 이메일로 다시 회원가입 시도
+    second_response = signup(valid_signup_payload)
+    
+    # Then: 실패해야 함
+    assert second_response.status_code == 400
+    assert "email" in second_response.data
