@@ -1,12 +1,21 @@
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 
 from .models import Menu
 from .serializers import MenuSerializer
 
 
-class MenuListView(generics.ListAPIView):
-    """메뉴 목록 조회 (공개)"""
+class MenuListCreateView(generics.ListCreateAPIView):
+    """
+    메뉴 목록 조회 (공개) 및 등록 (관리자)
+    - GET: 누구나 조회 가능
+    - POST: 관리자만 등록 가능
+    """
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
-    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        """HTTP 메서드에 따라 권한 분기"""
+        if self.request.method == "POST":
+            return [IsAdminUser()]
+        return [AllowAny()]
