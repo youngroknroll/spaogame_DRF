@@ -1,10 +1,8 @@
 """
 회원가입 테스트
 """
-import pytest
 
 
-@pytest.mark.django_db
 def test_사용자는_필수정보를_입력하면_회원가입할_수_있다(signup, valid_signup_payload):
     """
     Given: 이메일, 비밀번호, 이름을 포함한 회원가입 정보
@@ -21,7 +19,6 @@ def test_사용자는_필수정보를_입력하면_회원가입할_수_있다(si
     assert "password" not in response.data
 
 
-@pytest.mark.django_db
 def test_이미_가입된_이메일로는_회원가입할_수_없다(signup, valid_signup_payload):
     """
     Given: 이미 가입된 이메일이 존재하고
@@ -40,7 +37,6 @@ def test_이미_가입된_이메일로는_회원가입할_수_없다(signup, val
     assert "email" in second_response.data
 
 
-@pytest.mark.django_db
 def test_이메일_형식이_아니면_회원가입할_수_없다(signup, valid_signup_payload):
     """
     Given: 잘못된 이메일 형식의 데이터
@@ -57,3 +53,21 @@ def test_이메일_형식이_아니면_회원가입할_수_없다(signup, valid_
     # Then
     assert response.status_code == 400
     assert "email" in response.data
+
+
+def test_비밀번호_규칙을_만족하지_않으면_회원가입할_수_없다(signup, valid_signup_payload):
+    """
+    Given: 약한 비밀번호 (예: 짧거나 단순한 비밀번호)
+    When: 회원가입을 시도하면
+    Then: 회원가입이 실패한다
+    """
+    # Given: 너무 짧은 비밀번호
+    weak_payload = valid_signup_payload.copy()
+    weak_payload["password"] = "123"
+    
+    # When
+    response = signup(weak_payload)
+    
+    # Then
+    assert response.status_code == 400
+    assert "password" in response.data

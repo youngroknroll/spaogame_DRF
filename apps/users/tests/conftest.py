@@ -22,8 +22,8 @@ def valid_signup_payload():
 
 
 @pytest.fixture
-def signup(api_client):
-    """회원가입 요청 헬퍼"""
+def signup(api_client, db):
+    """회원가입 요청 헬퍼 (DB 접근 필요)"""
     def _signup(payload):
         return api_client.post("/api/users/signup/", payload)
     return _signup
