@@ -1,8 +1,8 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAdminUser
 
-from .models import Menu
-from .serializers import MenuSerializer
+from .models import Menu, Category
+from .serializers import MenuSerializer, CategorySerializer
 
 
 class MenuListCreateView(generics.ListCreateAPIView):
@@ -19,3 +19,14 @@ class MenuListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return [IsAdminUser()]
         return [AllowAny()]
+
+
+class CategoryListView(generics.ListAPIView):
+    """특정 메뉴의 카테고리 목록 조회 (공개)"""
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """URL 파라미터의 menu_id로 필터링"""
+        menu_id = self.kwargs.get("menu_id")
+        return Category.objects.filter(menu_id=menu_id)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Menu
+from .models import Menu, Category
 
 
 class MenuSerializer(serializers.ModelSerializer):
@@ -9,4 +9,13 @@ class MenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = Menu
         fields = ["id", "name", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """카테고리 시리얼라이저"""
+    
+    class Meta:
+        model = Category
+        fields = ["id", "menu", "name", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
