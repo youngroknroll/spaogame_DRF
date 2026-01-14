@@ -38,3 +38,22 @@ def test_이미_가입된_이메일로는_회원가입할_수_없다(signup, val
     # Then: 실패해야 함
     assert second_response.status_code == 400
     assert "email" in second_response.data
+
+
+@pytest.mark.django_db
+def test_이메일_형식이_아니면_회원가입할_수_없다(signup, valid_signup_payload):
+    """
+    Given: 잘못된 이메일 형식의 데이터
+    When: 회원가입을 시도하면
+    Then: 회원가입이 실패한다
+    """
+    # Given
+    invalid_payload = valid_signup_payload.copy()
+    invalid_payload["email"] = "notanemail"
+    
+    # When
+    response = signup(invalid_payload)
+    
+    # Then
+    assert response.status_code == 400
+    assert "email" in response.data
