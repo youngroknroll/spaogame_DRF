@@ -80,7 +80,7 @@ def test_회원가입시_비밀번호는_평문으로_저장되지_않는다(sig
     """
     Given: 유효한 회원가입 정보
     When: 회원가입을 하면
-    Then: 비밀번호가 해시되어 저장된다
+    Then: 비밀번호가 해시되어 저장되고 실제로 작동한다
     """
     # Given
     plain_password = valid_signup_payload["password"]
@@ -89,7 +89,15 @@ def test_회원가입시_비밀번호는_평문으로_저장되지_않는다(sig
     response = signup(valid_signup_payload)
     assert response.status_code == 201
     
-    # Then: DB에서 사용자를 조회하고 비밀번호가 해시되어 있는지 확인
+    # Then: DB에서 사용자를 조회하고 비밀번호 검증
     user = User.objects.get(email=valid_signup_payload["email"])
+    
+    # 평문으로 저장되지 않았는지 확인
     assert user.password != plain_password
-    assert user.password.startswith("argon2")  # Argon2 해시 확인
+    
+    # 해시 형식 확인 (Argon2 사용)
+    assert user.password.startswith("argon2")
+    
+    # 실제로 비밀번호가 작동하는지 확인
+    assert user.check_password(plain_password) is True
+    assert user.check_password("wrongpassword") is False

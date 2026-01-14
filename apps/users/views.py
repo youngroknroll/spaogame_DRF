@@ -8,9 +8,3 @@ from .serializers import SignUpSerializer
 class SignUpView(generics.CreateAPIView):
     serializer_class = SignUpSerializer
     permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)

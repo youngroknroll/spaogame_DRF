@@ -12,6 +12,10 @@ class SignUpSerializer(serializers.ModelSerializer):
         model = User
         fields = ["email", "password", "name"]
 
+    def validate_email(self, value):
+        """이메일 정규화 (소문자 변환)"""
+        return value.lower()
+
     def validate_password(self, value):
         """비밀번호 검증"""
         validate_password(value)
