@@ -67,6 +67,12 @@ response = api_client.post("/api/users/signup/", {"email": "...", ...})
 response = signup(valid_signup_payload)
 ```
 
+db 접근이 필요한 테스트에만 django_db를 선언한다.
+가능하면 fixture 레벨에서만 선언한다.
+
+테스트는 DB를 직접 알 수 없다.
+fixture가 db 의존성을 캡슐화한다.
+
 ### 4.1 한글 테스트명 원칙
 - 테스트 함수명은 한글을 사용한다.
 - 사용자 관점의 “행위와 결과”를 한 문장으로 표현한다.

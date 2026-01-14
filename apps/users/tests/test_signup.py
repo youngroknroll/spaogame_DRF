@@ -1,6 +1,9 @@
 """
 회원가입 테스트
 """
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 def test_사용자는_필수정보를_입력하면_회원가입할_수_있다(signup, valid_signup_payload):
@@ -71,3 +74,22 @@ def test_비밀번호_규칙을_만족하지_않으면_회원가입할_수_없�
     # Then
     assert response.status_code == 400
     assert "password" in response.data
+
+
+def test_회원가입시_비밀번호는_평문으로_저장되지_않는다(signup, valid_signup_payload):
+    """
+    Given: 유효한 회원가입 정보
+    When: 회원가입을 하면
+    Then: 비밀번호가 해시되어 저장된다
+    """
+    # Given
+    plain_password = valid_signup_payload["password"]
+    
+    # When
+    response = signup(valid_signup_payload)
+    assert response.status_code == 201
+    
+    # Then: DB에서 사용자를 조회하고 비밀번호가 해시되어 있는지 확인
+    user = User.objects.get(email=valid_signup_payload["email"])
+    assert user.password != plain_password
+    assert user.password.startswith("argon2")  # Argon2 해시 확인
