@@ -35,3 +35,12 @@ def get_categories(api_client, db):
         url = API_PRODUCTS_CATEGORIES.format(menu_id=menu_id)
         return api_client.get(url)
     return _get_categories
+
+
+@pytest.fixture
+def create_category(auth_client):
+    """카테고리 등록 헬퍼 (관리자 인증)"""
+    def _create_category(menu_id, payload):
+        url = API_PRODUCTS_CATEGORIES.format(menu_id=menu_id)
+        return auth_client.post(url, payload)
+    return _create_category
