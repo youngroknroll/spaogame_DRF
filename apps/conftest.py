@@ -16,6 +16,7 @@ API_USERS_SIGNUP = "/api/users/signup/"
 API_USERS_LOGIN = "/api/users/login/"
 API_PRODUCTS_MENUS = "/api/products/menus/"
 API_PRODUCTS_CATEGORIES = "/api/products/menus/{menu_id}/categories/"
+API_PRODUCTS = "/api/products/"
 
 # 관리자 계정 정보
 ADMIN_EMAIL = "admin@example.com"
