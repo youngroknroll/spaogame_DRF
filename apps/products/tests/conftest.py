@@ -59,3 +59,12 @@ def create_product(auth_client):
         from apps.conftest import API_PRODUCTS
         return auth_client.post(API_PRODUCTS, payload)
     return _create_product
+
+
+@pytest.fixture
+def create_product_as_user(user_client):
+    """상품 등록 헬퍼 (일반 사용자 인증)"""
+    def _create_product(payload):
+        from apps.conftest import API_PRODUCTS
+        return user_client.post(API_PRODUCTS, payload)
+    return _create_product

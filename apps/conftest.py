@@ -66,3 +66,31 @@ def auth_client(api_client, admin_token):
     """인증된 API 클라이언트 (관리자)"""
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {admin_token}")
     return api_client
+
+
+@pytest.fixture
+def regular_user(db):
+    """일반 사용자 (DB에 저장)"""
+    return User.objects.create_user(
+        email=TEST_USER_EMAIL,
+        password=TEST_USER_PASSWORD,
+        name=TEST_USER_NAME,
+    )
+
+
+@pytest.fixture
+def regular_user_token(api_client, regular_user):
+    """일반 사용자 인증 토큰"""
+    response = api_client.post(API_USERS_LOGIN, {
+        "email": TEST_USER_EMAIL,
+        "password": TEST_USER_PASSWORD,
+    })
+    return response.data["access"]
+
+
+@pytest.fixture
+def user_client(api_client, regular_user_token):
+    """인증된 API 클라이언트 (일반 사용자)"""
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {regular_user_token}")
+    return client
