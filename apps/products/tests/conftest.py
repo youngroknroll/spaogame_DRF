@@ -2,7 +2,7 @@
 Products 앱 테스트 픽스처
 """
 import pytest
-from apps.products.models import Menu, Category
+from apps.products.models import Menu, Category, Product
 from apps.conftest import API_PRODUCTS_MENUS, API_PRODUCTS_CATEGORIES
 
 
@@ -16,6 +16,28 @@ def sample_menu(db):
 def sample_category(db, sample_menu):
     """테스트용 카테고리"""
     return Category.objects.create(menu=sample_menu, name="후라이드")
+
+
+@pytest.fixture
+def sample_products(db, sample_menu, sample_category):
+    """테스트용 상품들"""
+    products = [
+        Product.objects.create(
+            menu=sample_menu,
+            category=sample_category,
+            name="후라이드치킨",
+            price=18000,
+            description="바삭한 후라이드치킨"
+        ),
+        Product.objects.create(
+            menu=sample_menu,
+            category=sample_category,
+            name="양념치킨",
+            price=19000,
+            description="달콤한 양념치킨"
+        )
+    ]
+    return products
 
 
 @pytest.fixture
@@ -68,3 +90,17 @@ def create_product_as_user(user_client):
         from apps.conftest import API_PRODUCTS
         return user_client.post(API_PRODUCTS, payload)
     return _create_product
+
+
+@pytest.fixture
+def get_products(api_client, db):
+    """상품 목록 조회 헬퍼 (DB 접근 필요)"""
+    def _get_products(menu_id=None, category_id=None):
+        from apps.conftest import API_PRODUCTS
+        params = {}
+        if menu_id:
+            params["menu"] = menu_id
+        if category_id:
+            params["category"] = category_id
+        return api_client.get(API_PRODUCTS, params)
+    return _get_products

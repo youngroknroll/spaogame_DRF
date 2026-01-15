@@ -49,6 +49,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
     """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filterset_fields = ["menu", "category"]
 
     def get_permissions(self):
         """HTTP 메서드에 따라 권한 분기"""

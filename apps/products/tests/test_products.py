@@ -48,3 +48,23 @@ def test_권한_관리자가_아닌_사용자는_상품을_등록할_수_없다(
     
     # Then
     assert response.status_code == 403
+
+
+def test_사용자는_특정_메뉴와_카테고리에_속한_상품_목록을_조회할_수_있다(get_products, sample_products):
+    """
+    Given: 특정 메뉴와 카테고리에 상품들이 등록되어 있을 때
+    When: 해당 메뉴와 카테고리로 상품 목록을 조회하면
+    Then: 상품 목록이 반환된다
+    """
+    # Given
+    menu_id = sample_products[0].menu.id
+    category_id = sample_products[0].category.id
+    
+    # When
+    response = get_products(menu_id=menu_id, category_id=category_id)
+    
+    # Then
+    assert response.status_code == 200
+    assert len(response.data["results"]) == 2
+    assert response.data["results"][0]["name"] == "후라이드치킨"
+    assert response.data["results"][1]["name"] == "양념치킨"
