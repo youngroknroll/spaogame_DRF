@@ -107,6 +107,22 @@ def get_products(api_client, db):
 
 
 @pytest.fixture
+def get_products_with_ordering(api_client, db):
+    """상품 목록 조회 헬퍼 - 정렬 지원 (DB 접근 필요)"""
+    def _get_products(menu_id=None, category_id=None, ordering=None):
+        from apps.conftest import API_PRODUCTS
+        params = {}
+        if menu_id:
+            params["menu"] = menu_id
+        if category_id:
+            params["category"] = category_id
+        if ordering:
+            params["ordering"] = ordering
+        return api_client.get(API_PRODUCTS, params)
+    return _get_products
+
+
+@pytest.fixture
 def get_product_detail(api_client, db):
     """상품 상세 조회 헬퍼 (DB 접근 필요)"""
     def _get_product_detail(product_id):

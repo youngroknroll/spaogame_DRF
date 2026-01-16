@@ -1,9 +1,11 @@
 from rest_framework import generics
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import OrderingFilter
 
 from .models import Menu, Category, Product
 from .serializers import MenuSerializer, CategorySerializer, ProductSerializer
+from .permissions import IsAdminOrReadOnly
 
 
 class MenuListCreateView(generics.ListCreateAPIView):
@@ -14,13 +16,8 @@ class MenuListCreateView(generics.ListCreateAPIView):
     """
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
+    permission_classes = [IsAdminOrReadOnly]
     pagination_class = None  # 메뉴는 페이지네이션 불필요
-
-    def get_permissions(self):
-        """HTTP 메서드에 따라 권한 분기"""
-        if self.request.method == "POST":
-            return [IsAdminUser()]
-        return [AllowAny()]
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -30,6 +27,7 @@ class CategoryListCreateView(generics.ListCreateAPIView):
     - POST: 관리자만 등록 가능
     """
     serializer_class = CategorySerializer
+    permission_classes = [IsAdminOrReadOnly]
     pagination_class = None  # 카테고리는 페이지네이션 불필요
 
     def get_queryset(self):
@@ -50,12 +48,6 @@ class CategoryListCreateView(generics.ListCreateAPIView):
         
         serializer.save(menu_id=url_menu_id)
 
-    def get_permissions(self):
-        """HTTP 메서드에 따라 권한 분기"""
-        if self.request.method == "POST":
-            return [IsAdminUser()]
-        return [AllowAny()]
-
 
 class ProductListCreateView(generics.ListCreateAPIView):
     """
@@ -65,13 +57,11 @@ class ProductListCreateView(generics.ListCreateAPIView):
     """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["menu", "category"]
-
-    def get_permissions(self):
-        """HTTP 메서드에 따라 권한 분기"""
-        if self.request.method == "POST":
-            return [IsAdminUser()]
-        return [AllowAny()]
+    filter_backends = [OrderingFilter]
+    ordering_fields = ["name", "price", "created_at"]
+    ordering = ["id"]  # 기본 정렬
 
 
 class ProductRetrieveView(generics.RetrieveAPIView):

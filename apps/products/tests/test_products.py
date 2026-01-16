@@ -114,3 +114,69 @@ def test_사용자는_상품_상세_정보를_조회할_수_있다(get_product_d
     assert response.data["id"] == product.id
     assert response.data["name"] == "후라이드치킨"
     assert response.data["price"] == 18000
+
+
+def test_존재하지_않는_상품은_조회할_수_없다(get_product_detail, db):
+    """
+    Given: 존재하지 않는 상품 ID가 있을 때
+    When: 해당 ID로 상품을 조회하면
+    Then: 404 오류가 발생한다
+    """
+    # Given - 존재하지 않는 ID
+    non_existent_id = 99999
+    
+    # When
+    response = get_product_detail(non_existent_id)
+    
+    # Then
+    assert response.status_code == 404
+
+
+def test_상품_목록은_가격_오름차순으로_조회할_수_있다(get_products_with_ordering, sample_products):
+    """
+    Given: 가격이 다른 상품들이 있을 때
+    When: 가격 오름차순으로 정렬하여 조회하면
+    Then: 가격이 낮은 순서대로 조회된다
+    """
+    # Given
+    menu_id = sample_products[0].menu.id
+    category_id = sample_products[0].category.id
+    
+    # When
+    response = get_products_with_ordering(
+        menu_id=menu_id, 
+        category_id=category_id, 
+        ordering="price"
+    )
+    
+    # Then
+    assert response.status_code == 200
+    results = response.data["results"]
+    assert len(results) >= 2
+    assert results[0]["name"] == "후라이드치킨"  # 18000원
+    assert results[1]["name"] == "양념치킨"  # 19000원
+
+
+def test_상품_목록은_가격_내림차순으로_조회할_수_있다(get_products_with_ordering, sample_products):
+    """
+    Given: 가격이 다른 상품들이 있을 때
+    When: 가격 내림차순으로 정렬하여 조회하면
+    Then: 가격이 높은 순서대로 조회된다
+    """
+    # Given
+    menu_id = sample_products[0].menu.id
+    category_id = sample_products[0].category.id
+    
+    # When
+    response = get_products_with_ordering(
+        menu_id=menu_id, 
+        category_id=category_id, 
+        ordering="-price"
+    )
+    
+    # Then
+    assert response.status_code == 200
+    results = response.data["results"]
+    assert len(results) >= 2
+    assert results[0]["name"] == "양념치킨"  # 19000원
+    assert results[1]["name"] == "후라이드치킨"  # 18000원
