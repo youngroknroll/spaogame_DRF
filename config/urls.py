@@ -21,6 +21,7 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/users/", include("apps.users.urls")),
+    path("api/", include("apps.postings.urls")),  # products와 postings 경로 포함
     path("api/products/", include("apps.products.urls")),
     path("api/cart/", include("apps.orders.urls")),
 ]

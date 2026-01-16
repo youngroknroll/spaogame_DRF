@@ -20,6 +20,9 @@ API_PRODUCTS = "/api/products/"
 API_PRODUCT_DETAIL = "/api/products/{product_id}/"
 API_CART = "/api/cart/"
 API_CART_ITEM = "/api/cart/{item_id}/"
+API_POSTINGS = "/api/products/{product_id}/postings/"
+API_COMMENTS = "/api/postings/{posting_id}/comments/"
+API_COMMENT = "/api/postings/{posting_id}/comments/{comment_id}/"
 
 # 관리자 계정 정보
 ADMIN_EMAIL = "admin@example.com"
@@ -35,6 +38,8 @@ TEST_USER_NAME = "테스트유저"
 # ============================================================
 # 공통 Fixture
 # ============================================================
+
+# ---- 클라이언트 ----
 
 @pytest.fixture
 def api_client():
@@ -97,3 +102,32 @@ def user_client(api_client, regular_user_token):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {regular_user_token}")
     return client
+
+
+# ---- 공통 도메인 데이터 ----
+
+@pytest.fixture
+def sample_menu(db):
+    """테스트용 메뉴 (공통)"""
+    from apps.products.models import Menu
+    return Menu.objects.create(name="치킨")
+
+
+@pytest.fixture
+def sample_category(db, sample_menu):
+    """테스트용 카테고리 (공통)"""
+    from apps.products.models import Category
+    return Category.objects.create(menu=sample_menu, name="후라이드")
+
+
+@pytest.fixture
+def sample_product(db, sample_menu, sample_category):
+    """테스트용 상품 (공통)"""
+    from apps.products.models import Product
+    return Product.objects.create(
+        menu=sample_menu,
+        category=sample_category,
+        name="후라이드치킨",
+        price=18000,
+        description="바삭한 후라이드치킨"
+    )

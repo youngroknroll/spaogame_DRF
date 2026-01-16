@@ -1,26 +1,16 @@
 """
 Products 앱 테스트 픽스처
+- 공통 픽스처(sample_menu, sample_category, sample_product)는 apps/conftest.py 사용
+- 이 파일에는 Products 앱 전용 픽스처만 정의
 """
 import pytest
-from apps.products.models import Menu, Category, Product
+from apps.products.models import Product
 from apps.conftest import API_PRODUCTS_MENUS, API_PRODUCTS_CATEGORIES
 
 
 @pytest.fixture
-def sample_menu(db):
-    """테스트용 메뉴"""
-    return Menu.objects.create(name="치킨")
-
-
-@pytest.fixture
-def sample_category(db, sample_menu):
-    """테스트용 카테고리"""
-    return Category.objects.create(menu=sample_menu, name="후라이드")
-
-
-@pytest.fixture
 def sample_products(db, sample_menu, sample_category):
-    """테스트용 상품들"""
+    """테스트용 상품들 (여러 개 - Products 앱 전용)"""
     products = [
         Product.objects.create(
             menu=sample_menu,

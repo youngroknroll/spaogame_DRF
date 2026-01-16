@@ -1,23 +1,9 @@
 """
 Orders 앱 테스트 픽스처
+- 공통 픽스처는 apps/conftest.py 사용
+- 이 파일에는 Orders 앱 전용 픽스처만 정의
 """
 import pytest
-from apps.products.models import Menu, Category, Product
-
-
-@pytest.fixture
-def sample_product(db):
-    """테스트용 상품"""
-    menu = Menu.objects.create(name="치킨")
-    category = Category.objects.create(menu=menu, name="후라이드")
-    product = Product.objects.create(
-        menu=menu,
-        category=category,
-        name="후라이드치킨",
-        price=18000,
-        description="바삭한 후라이드치킨"
-    )
-    return product
 
 
 @pytest.fixture
