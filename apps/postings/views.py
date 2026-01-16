@@ -1,11 +1,13 @@
 """
 Postings 앱 뷰 (FBV 방식)
 """
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
+from apps.products.models import Product
 from .models import Posting, Comment
 from .serializers import PostingSerializer, CommentSerializer
 
@@ -17,9 +19,10 @@ def posting_create(request, product_id):
     후기 작성
     - 로그인 필수
     """
+    product = get_object_or_404(Product, id=product_id)
     serializer = PostingSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user, product_id=product_id)
+        serializer.save(user=request.user, product=product)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -31,9 +34,10 @@ def comment_create(request, posting_id):
     댓글 작성
     - 로그인 필수
     """
+    posting = get_object_or_404(Posting, id=posting_id)
     serializer = CommentSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user, posting_id=posting_id)
+        serializer.save(user=request.user, posting=posting)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

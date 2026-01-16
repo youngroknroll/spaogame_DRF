@@ -4,8 +4,10 @@ Orders 앱 모델 (장바구니 포함)
 from django.db import models
 from django.conf import settings
 
+from apps.core.models import TimeStampedModel
 
-class Cart(models.Model):
+
+class Cart(TimeStampedModel):
     """
     사용자별 장바구니
     """
@@ -15,8 +17,6 @@ class Cart(models.Model):
         related_name="cart",
         verbose_name="사용자"
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
     class Meta:
         db_table = "carts"
@@ -27,7 +27,7 @@ class Cart(models.Model):
         return f"{self.user.email}의 장바구니"
 
 
-class CartItem(models.Model):
+class CartItem(TimeStampedModel):
     """
     장바구니 항목
     """
@@ -43,8 +43,6 @@ class CartItem(models.Model):
         verbose_name="상품"
     )
     quantity = models.PositiveIntegerField(default=1, verbose_name="수량")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="추가일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
     class Meta:
         db_table = "cart_items"

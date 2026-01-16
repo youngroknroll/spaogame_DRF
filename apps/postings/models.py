@@ -5,8 +5,10 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from apps.core.models import TimeStampedModel
 
-class Posting(models.Model):
+
+class Posting(TimeStampedModel):
     """
     상품 후기
     """
@@ -28,8 +30,6 @@ class Posting(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name="평점"
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="작성일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
     class Meta:
         db_table = "postings"
@@ -41,7 +41,7 @@ class Posting(models.Model):
         return f"{self.product.name} - {self.title}"
 
 
-class Comment(models.Model):
+class Comment(TimeStampedModel):
     """
     후기에 대한 댓글
     """
@@ -58,8 +58,6 @@ class Comment(models.Model):
         verbose_name="작성자"
     )
     content = models.TextField(verbose_name="내용")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="작성일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
     class Meta:
         db_table = "comments"

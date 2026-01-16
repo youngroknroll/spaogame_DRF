@@ -1,11 +1,11 @@
 from django.db import models
 
+from apps.core.models import TimeStampedModel
 
-class Menu(models.Model):
+
+class Menu(TimeStampedModel):
     """메뉴 모델"""
     name = models.CharField(max_length=100, verbose_name="메뉴명")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
     class Meta:
         db_table = "menus"
@@ -17,7 +17,7 @@ class Menu(models.Model):
         return self.name
 
 
-class Category(models.Model):
+class Category(TimeStampedModel):
     """카테고리 모델"""
     menu = models.ForeignKey(
         Menu,
@@ -26,8 +26,6 @@ class Category(models.Model):
         verbose_name="메뉴"
     )
     name = models.CharField(max_length=100, verbose_name="카테고리명")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
     class Meta:
         db_table = "categories"
@@ -39,7 +37,7 @@ class Category(models.Model):
         return f"{self.menu.name} - {self.name}"
 
 
-class Product(models.Model):
+class Product(TimeStampedModel):
     """상품 모델"""
     menu = models.ForeignKey(
         Menu,
@@ -56,8 +54,6 @@ class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name="상품명")
     price = models.PositiveIntegerField(verbose_name="가격")
     description = models.TextField(blank=True, verbose_name="설명")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성일시")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정일시")
 
     class Meta:
         db_table = "products"

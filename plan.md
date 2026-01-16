@@ -13,6 +13,10 @@
 - test_list.md에 없는 기능은 구현하지 않는다.
 - 추가 요구사항은 반드시 test_list.md에 테스트 항목으로 먼저 추가한다.
 
+### 문서 대비 누락 항목 관리
+- 기존 pure Django 문서(`PROJECT_OVERVIEW.md`)와의 차이를 `test_list.md`의 "문서 대비 추가 누락 항목(Backlog)"에 기록한다.
+- Backlog 항목은 우선순위/범위 확정 시 MVP 범위에 편입한다.
+
 ---
 
 ## 2. 기술 및 환경 결정
@@ -176,6 +180,18 @@ test_list.md의 항목 하나를 완료로 처리하려면 다음을 만족해�
 
 완료 기준:
 - test_list.md의 Postings 관련 테스트 전부 통과
+
+---
+
+### Phase 5: Backlog 정합성 확보
+목표: 기존 문서 기능과의 정합성 확보
+- Users 상세 필드 확장 (username, mobile_number 등)
+- Products 상세 도메인/메인 목록 보강
+- Cart 상세 상품 기반 구조 확장
+- Wishlist 제공 여부 결정 및 반영
+
+완료 기준:
+- test_list.md의 Backlog 항목 중 P1 전부 통과
 
 ---
 

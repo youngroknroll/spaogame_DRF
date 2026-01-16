@@ -36,6 +36,19 @@ def cart_list(request):
         # 상품 조회
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
+
+        try:
+            quantity = int(quantity)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "수량은 정수여야 합니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if quantity <= 0:
+            return Response(
+                {"error": "수량은 1 이상이어야 합니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         try:
             product = Product.objects.get(id=product_id)
@@ -80,9 +93,26 @@ def cart_item_detail(request, item_id):
     if request.method == 'PATCH':
         # 수량 변경
         quantity = request.data.get('quantity')
-        if quantity:
-            cart_item.quantity = quantity
-            cart_item.save()
+        if quantity is None:
+            return Response(
+                {"error": "수량이 필요합니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            quantity = int(quantity)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "수량은 정수여야 합니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if quantity <= 0:
+            return Response(
+                {"error": "수량은 1 이상이어야 합니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        cart_item.quantity = quantity
+        cart_item.save()
         
         serializer = CartItemSerializer(cart_item)
         return Response(serializer.data)

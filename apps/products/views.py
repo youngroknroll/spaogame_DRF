@@ -5,7 +5,7 @@ from rest_framework.filters import OrderingFilter
 
 from .models import Menu, Category, Product
 from .serializers import MenuSerializer, CategorySerializer, ProductSerializer
-from .permissions import IsAdminOrReadOnly
+from apps.core.permissions import IsAdminOrReadOnly
 
 
 class MenuListCreateView(generics.ListCreateAPIView):
