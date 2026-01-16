@@ -68,3 +68,30 @@ def test_사용자는_특정_메뉴와_카테고리에_속한_상품_목록을_�
     assert len(response.data["results"]) == 2
     assert response.data["results"][0]["name"] == "후라이드치킨"
     assert response.data["results"][1]["name"] == "양념치킨"
+
+
+def test_검증_카테고리가_메뉴에_속하지_않으면_상품을_등록할_수_없다(create_product, sample_menu, db):
+    """
+    Given: 메뉴와 다른 메뉴에 속한 카테고리가 있을 때
+    When: 해당 카테고리로 상품을 등록하려고 하면
+    Then: 검증 오류가 발생한다
+    """
+    # Given - 다른 메뉴 생성
+    from apps.products.models import Menu, Category
+    other_menu = Menu.objects.create(name="피자")
+    other_category = Category.objects.create(menu=other_menu, name="치즈피자")
+    
+    payload = {
+        "menu": sample_menu.id,
+        "category": other_category.id,  # 다른 메뉴의 카테고리
+        "name": "후라이드치킨",
+        "price": 18000,
+        "description": "바삭한 후라이드치킨",
+    }
+    
+    # When
+    response = create_product(payload)
+    
+    # Then
+    assert response.status_code == 400
+    assert "category" in response.data or "non_field_errors" in response.data

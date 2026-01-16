@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.exceptions import ValidationError
 
 from .models import Menu, Category, Product
 from .serializers import MenuSerializer, CategorySerializer, ProductSerializer
@@ -13,6 +14,7 @@ class MenuListCreateView(generics.ListCreateAPIView):
     """
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
+    pagination_class = None  # 메뉴는 페이지네이션 불필요
 
     def get_permissions(self):
         """HTTP 메서드에 따라 권한 분기"""
@@ -28,11 +30,25 @@ class CategoryListCreateView(generics.ListCreateAPIView):
     - POST: 관리자만 등록 가능
     """
     serializer_class = CategorySerializer
+    pagination_class = None  # 카테고리는 페이지네이션 불필요
 
     def get_queryset(self):
         """URL 파라미터의 menu_id로 필터링"""
         menu_id = self.kwargs.get("menu_id")
         return Category.objects.filter(menu_id=menu_id)
+
+    def perform_create(self, serializer):
+        """URL의 menu_id 검증 및 강제 적용"""
+        url_menu_id = self.kwargs.get("menu_id")
+        payload_menu_id = self.request.data.get("menu")
+        
+        # payload의 menu가 URL의 menu_id와 다르면 에러
+        if payload_menu_id and str(payload_menu_id) != str(url_menu_id):
+            raise ValidationError({
+                "menu": "URL의 메뉴 ID와 일치해야 합니다."
+            })
+        
+        serializer.save(menu_id=url_menu_id)
 
     def get_permissions(self):
         """HTTP 메서드에 따라 권한 분기"""

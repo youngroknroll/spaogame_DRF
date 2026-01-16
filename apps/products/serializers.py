@@ -28,3 +28,15 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ["id", "menu", "category", "name", "price", "description", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
+    
+    def validate(self, attrs):
+        """카테고리가 메뉴에 속하는지 검증"""
+        menu = attrs.get("menu")
+        category = attrs.get("category")
+        
+        if menu and category and category.menu != menu:
+            raise serializers.ValidationError({
+                "category": "카테고리는 선택한 메뉴에 속해야 합니다."
+            })
+        
+        return attrs
