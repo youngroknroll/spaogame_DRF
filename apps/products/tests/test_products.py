@@ -95,3 +95,22 @@ def test_검증_카테고리가_메뉴에_속하지_않으면_상품을_등록�
     # Then
     assert response.status_code == 400
     assert "category" in response.data or "non_field_errors" in response.data
+
+
+def test_사용자는_상품_상세_정보를_조회할_수_있다(get_product_detail, sample_products):
+    """
+    Given: 상품이 등록되어 있을 때
+    When: 상품 ID로 상세 정보를 조회하면
+    Then: 상품 상세 정보가 반환된다
+    """
+    # Given
+    product = sample_products[0]
+    
+    # When
+    response = get_product_detail(product.id)
+    
+    # Then
+    assert response.status_code == 200
+    assert response.data["id"] == product.id
+    assert response.data["name"] == "후라이드치킨"
+    assert response.data["price"] == 18000

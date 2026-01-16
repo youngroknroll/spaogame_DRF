@@ -104,3 +104,13 @@ def get_products(api_client, db):
             params["category"] = category_id
         return api_client.get(API_PRODUCTS, params)
     return _get_products
+
+
+@pytest.fixture
+def get_product_detail(api_client, db):
+    """상품 상세 조회 헬퍼 (DB 접근 필요)"""
+    def _get_product_detail(product_id):
+        from apps.conftest import API_PRODUCT_DETAIL
+        url = API_PRODUCT_DETAIL.format(product_id=product_id)
+        return api_client.get(url)
+    return _get_product_detail

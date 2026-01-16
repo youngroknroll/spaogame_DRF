@@ -72,3 +72,14 @@ class ProductListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return [IsAdminUser()]
         return [AllowAny()]
+
+
+class ProductRetrieveView(generics.RetrieveAPIView):
+    """
+    상품 상세 조회 (공개)
+    - GET: 누구나 조회 가능
+    """
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [AllowAny]
+    lookup_url_kwarg = "product_id"
