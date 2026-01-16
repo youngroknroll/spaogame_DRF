@@ -18,6 +18,8 @@ API_PRODUCTS_MENUS = "/api/products/menus/"
 API_PRODUCTS_CATEGORIES = "/api/products/menus/{menu_id}/categories/"
 API_PRODUCTS = "/api/products/"
 API_PRODUCT_DETAIL = "/api/products/{product_id}/"
+API_CART = "/api/cart/"
+API_CART_ITEM = "/api/cart/{item_id}/"
 
 # 관리자 계정 정보
 ADMIN_EMAIL = "admin@example.com"
