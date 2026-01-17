@@ -2,9 +2,9 @@
 Orders 앱 URL 라우팅
 """
 from django.urls import path
-from . import views
+from .views import CartView, CartItemDetailView
 
 urlpatterns = [
-    path("", views.cart_list, name="cart-list"),
-    path("<int:item_id>/", views.cart_item_detail, name="cart-item-detail"),
+    path("", CartView.as_view(), name="cart-list"),
+    path("<int:item_id>/", CartItemDetailView.as_view(), name="cart-item-detail"),
 ]

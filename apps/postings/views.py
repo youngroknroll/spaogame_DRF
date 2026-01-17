@@ -1,68 +1,81 @@
 """
-Postings 앱 뷰 (FBV 방식)
+Postings 앱 뷰 (CBV 방식)
 """
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
 
 from apps.products.models import Product
 from .models import Posting, Comment
-from .serializers import PostingSerializer, CommentSerializer
+from .serializers import (
+    PostingSerializer,
+    PostingCreateSerializer,
+    CommentSerializer,
+    CommentCreateSerializer,
+)
+from .permissions import IsCommentOwner
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def posting_create(request, product_id):
+class PostingCreateView(generics.CreateAPIView):
     """
     후기 작성
-    - 로그인 필수
+    - POST: 로그인 필수
     """
-    product = get_object_or_404(Product, id=product_id)
-    serializer = PostingSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(user=request.user, product=product)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    permission_classes = [IsAuthenticated]
+    serializer_class = PostingCreateSerializer
+
+    def create(self, request, *args, **kwargs):
+        """후기 생성"""
+        product = get_object_or_404(Product, id=self.kwargs['product_id'])
+        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        posting = Posting.objects.create(
+            user=request.user,
+            product=product,
+            **serializer.validated_data
+        )
+        
+        response_serializer = PostingSerializer(posting)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def comment_create(request, posting_id):
+class CommentCreateView(generics.CreateAPIView):
     """
     댓글 작성
-    - 로그인 필수
+    - POST: 로그인 필수
     """
-    posting = get_object_or_404(Posting, id=posting_id)
-    serializer = CommentSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(user=request.user, posting=posting)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    permission_classes = [IsAuthenticated]
+    serializer_class = CommentCreateSerializer
+
+    def create(self, request, *args, **kwargs):
+        """댓글 생성"""
+        posting = get_object_or_404(Posting, id=self.kwargs['posting_id'])
+        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        comment = Comment.objects.create(
+            user=request.user,
+            posting=posting,
+            **serializer.validated_data
+        )
+        
+        response_serializer = CommentSerializer(comment)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def comment_delete(request, posting_id, comment_id):
+class CommentDeleteView(generics.DestroyAPIView):
     """
     댓글 삭제
-    - 본인이 작성한 댓글만 삭제 가능
+    - DELETE: 본인이 작성한 댓글만 삭제 가능
     """
-    try:
-        comment = Comment.objects.get(id=comment_id, posting_id=posting_id)
-    except Comment.DoesNotExist:
-        return Response(
-            {"error": "댓글을 찾을 수 없습니다."},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    
-    # 권한 검증: 본인의 댓글인지 확인
-    if comment.user != request.user:
-        return Response(
-            {"error": "본인의 댓글만 삭제할 수 있습니다."},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    comment.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    permission_classes = [IsAuthenticated, IsCommentOwner]
+    queryset = Comment.objects.all()
+    lookup_url_kwarg = "comment_id"
+
+    def get_queryset(self):
+        """해당 posting의 댓글만 필터링"""
+        return Comment.objects.filter(posting_id=self.kwargs['posting_id'])

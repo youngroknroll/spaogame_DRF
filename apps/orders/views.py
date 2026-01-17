@@ -1,11 +1,11 @@
 """
-Orders 앱 뷰 (FBV 방식)
+Orders 앱 뷰 (CBV 방식)
 """
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 
 from .models import Cart, CartItem
 from .serializers import (
@@ -17,39 +17,35 @@ from .serializers import (
 from apps.products.models import Product
 
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def cart_list(request):
+class CartView(APIView):
     """
     장바구니 조회 및 상품 추가
     - GET: 장바구니 조회 (없으면 빈 장바구니 반환)
     - POST: 장바구니에 상품 추가
     """
-    if request.method == 'GET':
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """장바구니 조회"""
         cart = Cart.objects.filter(user=request.user).first()
         
         if not cart:
-            # 장바구니가 없으면 빈 응답 반환
             return Response({"id": None, "items": [], "created_at": None, "updated_at": None})
         
         serializer = CartSerializer(cart)
         return Response(serializer.data)
-    
-    elif request.method == 'POST':
-        # 입력 검증
+
+    def post(self, request):
+        """장바구니에 상품 추가"""
         serializer = CartAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
         product_id = serializer.validated_data['product_id']
         quantity = serializer.validated_data['quantity']
         
-        # 상품 조회
         product = get_object_or_404(Product, id=product_id)
-        
-        # 장바구니 조회 또는 생성
         cart, _ = Cart.objects.get_or_create(user=request.user)
         
-        # 장바구니에 상품 추가 또는 수량 업데이트
         cart_item, created = CartItem.objects.get_or_create(
             cart=cart,
             product=product,
@@ -57,7 +53,6 @@ def cart_list(request):
         )
         
         if not created:
-            # 이미 존재하면 수량 누적
             cart_item.quantity += quantity
             cart_item.save()
         
@@ -65,29 +60,34 @@ def cart_list(request):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-@api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def cart_item_detail(request, item_id):
+class CartItemDetailView(generics.UpdateAPIView, generics.DestroyAPIView):
     """
     장바구니 항목 수정 및 삭제
     - PATCH: 수량 변경
     - DELETE: 항목 제거
     """
-    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-    
-    if request.method == 'PATCH':
-        # 입력 검증
-        serializer = CartUpdateSerializer(data=request.data)
+    permission_classes = [IsAuthenticated]
+    serializer_class = CartUpdateSerializer
+    lookup_url_kwarg = "item_id"
+
+    def get_queryset(self):
+        """현재 사용자의 장바구니 항목만 조회"""
+        return CartItem.objects.filter(cart__user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        """수량 변경 (PATCH)"""
+        cart_item = self.get_object()
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # 수량 변경
         cart_item.quantity = serializer.validated_data['quantity']
         cart_item.save()
         
         response_serializer = CartItemSerializer(cart_item)
         return Response(response_serializer.data)
-    
-    elif request.method == 'DELETE':
-        # 항목 제거
+
+    def destroy(self, request, *args, **kwargs):
+        """항목 제거 (DELETE)"""
+        cart_item = self.get_object()
         cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
