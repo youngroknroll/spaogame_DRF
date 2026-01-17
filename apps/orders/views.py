@@ -1,13 +1,19 @@
 """
 Orders 앱 뷰 (FBV 방식)
 """
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Cart, CartItem
-from .serializers import CartSerializer, CartItemSerializer
+from .serializers import (
+    CartSerializer,
+    CartItemSerializer,
+    CartAddSerializer,
+    CartUpdateSerializer,
+)
 from apps.products.models import Product
 
 
@@ -30,40 +36,18 @@ def cart_list(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        # 장바구니 조회 또는 생성
-        cart, _ = Cart.objects.get_or_create(user=request.user)
+        # 입력 검증
+        serializer = CartAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        product_id = serializer.validated_data['product_id']
+        quantity = serializer.validated_data['quantity']
         
         # 상품 조회
-        product_id = request.data.get('product_id')
-        quantity = request.data.get('quantity', 1)
-
-        # product_id 검증
-        if not product_id:
-            return Response(
-                {"error": "상품 ID는 필수입니다."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            quantity = int(quantity)
-        except (TypeError, ValueError):
-            return Response(
-                {"error": "수량은 정수여야 합니다."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if quantity <= 0:
-            return Response(
-                {"error": "수량은 1 이상이어야 합니다."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        product = get_object_or_404(Product, id=product_id)
         
-        try:
-            product = Product.objects.get(id=product_id)
-        except Product.DoesNotExist:
-            return Response(
-                {"error": "상품을 찾을 수 없습니다."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        # 장바구니 조회 또는 생성
+        cart, _ = Cart.objects.get_or_create(user=request.user)
         
         # 장바구니에 상품 추가 또는 수량 업데이트
         cart_item, created = CartItem.objects.get_or_create(
@@ -77,8 +61,8 @@ def cart_list(request):
             cart_item.quantity += quantity
             cart_item.save()
         
-        serializer = CartItemSerializer(cart_item)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        response_serializer = CartItemSerializer(cart_item)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['PATCH', 'DELETE'])
@@ -89,40 +73,19 @@ def cart_item_detail(request, item_id):
     - PATCH: 수량 변경
     - DELETE: 항목 제거
     """
-    try:
-        cart_item = CartItem.objects.get(id=item_id, cart__user=request.user)
-    except CartItem.DoesNotExist:
-        return Response(
-            {"error": "장바구니 항목을 찾을 수 없습니다."},
-            status=status.HTTP_404_NOT_FOUND
-        )
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     
     if request.method == 'PATCH':
+        # 입력 검증
+        serializer = CartUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
         # 수량 변경
-        quantity = request.data.get('quantity')
-        if quantity is None:
-            return Response(
-                {"error": "수량이 필요합니다."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        try:
-            quantity = int(quantity)
-        except (TypeError, ValueError):
-            return Response(
-                {"error": "수량은 정수여야 합니다."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if quantity <= 0:
-            return Response(
-                {"error": "수량은 1 이상이어야 합니다."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        cart_item.quantity = quantity
+        cart_item.quantity = serializer.validated_data['quantity']
         cart_item.save()
         
-        serializer = CartItemSerializer(cart_item)
-        return Response(serializer.data)
+        response_serializer = CartItemSerializer(cart_item)
+        return Response(response_serializer.data)
     
     elif request.method == 'DELETE':
         # 항목 제거
