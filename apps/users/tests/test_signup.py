@@ -101,3 +101,69 @@ def test_회원가입시_비밀번호는_평문으로_저장되지_않는다(sig
     # 실제로 비밀번호가 작동하는지 확인
     assert user.check_password(plain_password) is True
     assert user.check_password("wrongpassword") is False
+
+
+# ============================================================
+# P1: 확장 필드 테스트
+# ============================================================
+
+def test_회원가입시_전체필드를_저장할_수_있다(signup, full_signup_payload):
+    """
+    Given: 전체 필드가 포함된 회원가입 정보
+    When: 회원가입을 하면
+    Then: 모든 필드가 저장된다
+    """
+    # When
+    response = signup(full_signup_payload)
+    
+    # Then
+    assert response.status_code == 201
+    assert response.data["email"] == full_signup_payload["email"]
+    assert response.data["name"] == full_signup_payload["name"]
+    assert response.data["username"] == full_signup_payload["username"]
+    assert response.data["mobile_number"] == full_signup_payload["mobile_number"]
+    assert response.data["address1"] == full_signup_payload["address1"]
+    assert response.data["address2"] == full_signup_payload["address2"]
+    assert response.data["birthday"] == full_signup_payload["birthday"]
+    assert response.data["gender"] == full_signup_payload["gender"]
+    
+    # DB 저장 확인
+    user = User.objects.get(email=full_signup_payload["email"])
+    assert user.username == full_signup_payload["username"]
+    assert user.mobile_number == full_signup_payload["mobile_number"]
+
+
+def test_회원가입시_전화번호_형식이_잘못되면_실패한다(signup, full_signup_payload):
+    """
+    Given: 잘못된 전화번호 형식의 데이터
+    When: 회원가입을 시도하면
+    Then: 회원가입이 실패한다
+    """
+    # Given
+    invalid_payload = full_signup_payload.copy()
+    invalid_payload["mobile_number"] = "12345"  # 잘못된 형식
+    
+    # When
+    response = signup(invalid_payload)
+    
+    # Then
+    assert response.status_code == 400
+    assert "mobile_number" in response.data
+
+
+def test_회원가입시_성별은_M_F_중_하나여야_한다(signup, full_signup_payload):
+    """
+    Given: 잘못된 성별 값의 데이터
+    When: 회원가입을 시도하면
+    Then: 회원가입이 실패한다
+    """
+    # Given
+    invalid_payload = full_signup_payload.copy()
+    invalid_payload["gender"] = "X"  # 잘못된 값
+    
+    # When
+    response = signup(invalid_payload)
+    
+    # Then
+    assert response.status_code == 400
+    assert "gender" in response.data

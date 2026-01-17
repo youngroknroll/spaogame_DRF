@@ -13,11 +13,27 @@ from apps.conftest import (
 
 @pytest.fixture
 def valid_signup_payload():
-    """유효한 회원가입 데이터"""
+    """유효한 회원가입 데이터 (기본)"""
     return {
         "email": TEST_USER_EMAIL,
         "password": TEST_USER_PASSWORD,
         "name": TEST_USER_NAME,
+    }
+
+
+@pytest.fixture
+def full_signup_payload():
+    """유효한 회원가입 데이터 (전체 필드)"""
+    return {
+        "email": "fulluser@example.com",
+        "password": TEST_USER_PASSWORD,
+        "name": "풀유저",
+        "username": "fulluser",
+        "mobile_number": "010-1234-5678",
+        "address1": "서울시 강남구 테헤란로 123",
+        "address2": "스파오빌딩 5층",
+        "birthday": "1990-01-15",
+        "gender": "M",
     }
 
 

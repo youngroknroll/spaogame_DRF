@@ -39,3 +39,41 @@ def remove_from_cart(user_client, db):
         url = API_CART_ITEM.format(item_id=item_id)
         return user_client.delete(url)
     return _remove_from_cart
+
+
+# ============================================================
+# 상세 상품 기반 장바구니 Fixtures
+# ============================================================
+
+@pytest.fixture
+def sample_detailed_product_for_cart(db, sample_menu, sample_category):
+    """장바구니 테스트용 상세 상품"""
+    from apps.products.models import Product, Color, Size, DetailedProduct
+    
+    product = Product.objects.create(
+        menu=sample_menu,
+        category=sample_category,
+        name="장바구니 테스트 상품",
+        price=25000,
+        description="테스트용 상품"
+    )
+    
+    color = Color.objects.create(name="블랙", code="#000000")
+    size = Size.objects.create(name="M", display_order=2)
+    
+    detailed_product = DetailedProduct.objects.create(
+        product=product,
+        color=color,
+        size=size,
+        stock=100
+    )
+    
+    return detailed_product
+
+
+@pytest.fixture
+def add_detailed_to_cart(user_client, db):
+    """상세 상품을 장바구니에 추가하는 헬퍼 (인증된 사용자)"""
+    def _add_detailed_to_cart(payload):
+        return user_client.post(API_CART, payload)
+    return _add_detailed_to_cart

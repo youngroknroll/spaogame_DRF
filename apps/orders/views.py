@@ -14,14 +14,14 @@ from .serializers import (
     CartAddSerializer,
     CartUpdateSerializer,
 )
-from apps.products.models import Product
+from apps.products.models import Product, DetailedProduct
 
 
 class CartView(APIView):
     """
     장바구니 조회 및 상품 추가
     - GET: 장바구니 조회 (없으면 빈 장바구니 반환)
-    - POST: 장바구니에 상품 추가
+    - POST: 장바구니에 상품 또는 상세상품 추가
     """
     permission_classes = [IsAuthenticated]
 
@@ -36,21 +36,34 @@ class CartView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        """장바구니에 상품 추가"""
+        """장바구니에 상품 또는 상세상품 추가"""
         serializer = CartAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        product_id = serializer.validated_data['product_id']
+        product_id = serializer.validated_data.get('product_id')
+        detailed_product_id = serializer.validated_data.get('detailed_product_id')
         quantity = serializer.validated_data['quantity']
         
-        product = get_object_or_404(Product, id=product_id)
         cart, _ = Cart.objects.get_or_create(user=request.user)
         
-        cart_item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            product=product,
-            defaults={'quantity': quantity}
-        )
+        if detailed_product_id:
+            # 상세 상품 기반 추가
+            detailed_product = get_object_or_404(DetailedProduct, id=detailed_product_id)
+            
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                detailed_product=detailed_product,
+                defaults={'quantity': quantity}
+            )
+        else:
+            # 기존 상품 기반 추가
+            product = get_object_or_404(Product, id=product_id)
+            
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                product=product,
+                defaults={'quantity': quantity}
+            )
         
         if not created:
             cart_item.quantity += quantity

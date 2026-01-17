@@ -29,7 +29,7 @@ class Cart(TimeStampedModel):
 
 class CartItem(TimeStampedModel):
     """
-    장바구니 항목
+    장바구니 항목 (상품 또는 상세상품 기반)
     """
     cart = models.ForeignKey(
         Cart,
@@ -37,10 +37,21 @@ class CartItem(TimeStampedModel):
         related_name="items",
         verbose_name="장바구니"
     )
+    # 기존 상품 기반 (하위 호환성)
     product = models.ForeignKey(
         "products.Product",
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         verbose_name="상품"
+    )
+    # 상세 상품 기반 (색상/사이즈 포함)
+    detailed_product = models.ForeignKey(
+        "products.DetailedProduct",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="상세상품"
     )
     quantity = models.PositiveIntegerField(default=1, verbose_name="수량")
 
@@ -48,7 +59,8 @@ class CartItem(TimeStampedModel):
         db_table = "cart_items"
         verbose_name = "장바구니 항목"
         verbose_name_plural = "장바구니 항목 목록"
-        unique_together = [["cart", "product"]]  # 같은 상품 중복 방지
 
     def __str__(self):
+        if self.detailed_product:
+            return f"{self.cart.user.email} - {self.detailed_product} ({self.quantity}개)"
         return f"{self.cart.user.email} - {self.product.name} ({self.quantity}개)"

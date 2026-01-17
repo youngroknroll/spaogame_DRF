@@ -3,9 +3,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
 
-from .models import Menu, Category, Product
-from .serializers import MenuSerializer, CategorySerializer, ProductSerializer
+from .models import Menu, Category, Product, Color, Size, Image, DetailedProduct
+from .serializers import (
+    MenuSerializer, CategorySerializer, ProductSerializer, ProductDetailSerializer,
+    ColorSerializer, SizeSerializer, ImageSerializer, DetailedProductSerializer
+)
 from apps.core.permissions import IsAdminOrReadOnly
 
 
@@ -50,6 +54,26 @@ class CategoryListCreateView(generics.ListCreateAPIView):
         serializer.save(menu_id=url_menu_id)
 
 
+class ColorListCreateView(generics.ListCreateAPIView):
+    """
+    색상 목록 조회 (공개) 및 등록 (관리자)
+    """
+    queryset = Color.objects.all()
+    serializer_class = ColorSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None
+
+
+class SizeListCreateView(generics.ListCreateAPIView):
+    """
+    사이즈 목록 조회 (공개) 및 등록 (관리자)
+    """
+    queryset = Size.objects.all()
+    serializer_class = SizeSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None
+
+
 class ProductListCreateView(generics.ListCreateAPIView):
     """
     상품 목록 조회 (공개) 및 등록 (관리자)
@@ -67,10 +91,50 @@ class ProductListCreateView(generics.ListCreateAPIView):
 
 class ProductRetrieveView(generics.RetrieveAPIView):
     """
-    상품 상세 조회 (공개)
+    상품 상세 조회 (공개) - 확장 정보 포함
     - GET: 누구나 조회 가능
     """
     queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+    serializer_class = ProductDetailSerializer
     permission_classes = [AllowAny]
     lookup_url_kwarg = "product_id"
+
+
+class ImageListCreateView(generics.ListCreateAPIView):
+    """
+    상품 이미지 목록 조회 (공개) 및 등록 (관리자)
+    """
+    serializer_class = ImageSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None
+
+    def get_queryset(self):
+        """URL 파라미터의 product_id로 필터링"""
+        product_id = self.kwargs.get("product_id")
+        return Image.objects.filter(product_id=product_id)
+
+    def perform_create(self, serializer):
+        """URL의 product_id 검증 및 강제 적용"""
+        product_id = self.kwargs.get("product_id")
+        product = get_object_or_404(Product, id=product_id)
+        serializer.save(product=product)
+
+
+class DetailedProductListCreateView(generics.ListCreateAPIView):
+    """
+    상세 상품 목록 조회 (공개) 및 등록 (관리자)
+    """
+    serializer_class = DetailedProductSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None
+
+    def get_queryset(self):
+        """URL 파라미터의 product_id로 필터링"""
+        product_id = self.kwargs.get("product_id")
+        return DetailedProduct.objects.filter(product_id=product_id)
+
+    def perform_create(self, serializer):
+        """URL의 product_id 검증 및 강제 적용"""
+        product_id = self.kwargs.get("product_id")
+        product = get_object_or_404(Product, id=product_id)
+        serializer.save(product=product)

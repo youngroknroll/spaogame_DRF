@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Avg, Count
 
 from apps.core.models import TimeStampedModel
 
@@ -37,6 +38,36 @@ class Category(TimeStampedModel):
         return f"{self.menu.name} - {self.name}"
 
 
+class Color(TimeStampedModel):
+    """색상 모델"""
+    name = models.CharField(max_length=50, verbose_name="색상명")
+    code = models.CharField(max_length=10, verbose_name="색상코드", help_text="예: #FF0000")
+
+    class Meta:
+        db_table = "colors"
+        verbose_name = "색상"
+        verbose_name_plural = "색상"
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.name
+
+
+class Size(TimeStampedModel):
+    """사이즈 모델"""
+    name = models.CharField(max_length=20, verbose_name="사이즈명")
+    display_order = models.PositiveIntegerField(default=0, verbose_name="정렬순서")
+
+    class Meta:
+        db_table = "sizes"
+        verbose_name = "사이즈"
+        verbose_name_plural = "사이즈"
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return self.name
+
+
 class Product(TimeStampedModel):
     """상품 모델"""
     menu = models.ForeignKey(
@@ -63,3 +94,87 @@ class Product(TimeStampedModel):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def thumbnail_url(self):
+        """메인 썸네일 URL"""
+        thumbnail = self.images.filter(is_thumbnail=True).first()
+        return thumbnail.image_url if thumbnail else None
+    
+    @property
+    def posting_count(self):
+        """후기 개수"""
+        return self.postings.count()
+    
+    @property
+    def average_rating(self):
+        """평균 평점"""
+        result = self.postings.aggregate(avg=Avg("rating"))
+        return round(result["avg"], 1) if result["avg"] else None
+    
+    def get_available_colors(self):
+        """해당 상품의 사용 가능한 색상들"""
+        return Color.objects.filter(
+            detailed_products__product=self
+        ).distinct()
+    
+    def get_available_sizes(self):
+        """해당 상품의 사용 가능한 사이즈들"""
+        return Size.objects.filter(
+            detailed_products__product=self
+        ).distinct()
+
+
+class Image(TimeStampedModel):
+    """상품 이미지 모델"""
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="images",
+        verbose_name="상품"
+    )
+    image_url = models.URLField(verbose_name="이미지 URL")
+    is_thumbnail = models.BooleanField(default=False, verbose_name="썸네일 여부")
+    display_order = models.PositiveIntegerField(default=0, verbose_name="정렬순서")
+
+    class Meta:
+        db_table = "images"
+        verbose_name = "이미지"
+        verbose_name_plural = "이미지"
+        ordering = ["-is_thumbnail", "display_order", "id"]
+
+    def __str__(self):
+        return f"{self.product.name} - {'썸네일' if self.is_thumbnail else '이미지'}"
+
+
+class DetailedProduct(TimeStampedModel):
+    """상세 상품 모델 (색상/사이즈 조합)"""
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="detailed_products",
+        verbose_name="상품"
+    )
+    color = models.ForeignKey(
+        Color,
+        on_delete=models.CASCADE,
+        related_name="detailed_products",
+        verbose_name="색상"
+    )
+    size = models.ForeignKey(
+        Size,
+        on_delete=models.CASCADE,
+        related_name="detailed_products",
+        verbose_name="사이즈"
+    )
+    stock = models.PositiveIntegerField(default=0, verbose_name="재고")
+
+    class Meta:
+        db_table = "detailed_products"
+        verbose_name = "상세 상품"
+        verbose_name_plural = "상세 상품"
+        unique_together = [["product", "color", "size"]]
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.product.name} - {self.color.name}/{self.size.name}"

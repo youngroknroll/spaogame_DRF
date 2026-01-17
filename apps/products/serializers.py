@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Menu, Category, Product
+from .models import Menu, Category, Product, Color, Size, Image, DetailedProduct
 
 
 class MenuSerializer(serializers.ModelSerializer):
@@ -21,12 +21,51 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
+class ColorSerializer(serializers.ModelSerializer):
+    """색상 시리얼라이저"""
+    
+    class Meta:
+        model = Color
+        fields = ["id", "name", "code", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class SizeSerializer(serializers.ModelSerializer):
+    """사이즈 시리얼라이저"""
+    
+    class Meta:
+        model = Size
+        fields = ["id", "name", "display_order", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ImageSerializer(serializers.ModelSerializer):
+    """이미지 시리얼라이저"""
+    
+    class Meta:
+        model = Image
+        fields = ["id", "product", "image_url", "is_thumbnail", "display_order", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class DetailedProductSerializer(serializers.ModelSerializer):
+    """상세 상품 시리얼라이저"""
+    color_name = serializers.CharField(source="color.name", read_only=True)
+    size_name = serializers.CharField(source="size.name", read_only=True)
+    
+    class Meta:
+        model = DetailedProduct
+        fields = ["id", "product", "color", "color_name", "size", "size_name", "stock", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
 class ProductSerializer(serializers.ModelSerializer):
-    """상품 시리얼라이저"""
+    """상품 시리얼라이저 (기본)"""
+    thumbnail_url = serializers.CharField(read_only=True)
     
     class Meta:
         model = Product
-        fields = ["id", "menu", "category", "name", "price", "description", "created_at", "updated_at"]
+        fields = ["id", "menu", "category", "name", "price", "description", "thumbnail_url", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
     
     def validate(self, attrs):
@@ -40,3 +79,33 @@ class ProductSerializer(serializers.ModelSerializer):
             })
         
         return attrs
+
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    """상품 상세 시리얼라이저 (확장 정보 포함)"""
+    thumbnail_url = serializers.CharField(read_only=True)
+    colors = serializers.SerializerMethodField()
+    sizes = serializers.SerializerMethodField()
+    images = ImageSerializer(many=True, read_only=True)
+    posting_count = serializers.IntegerField(read_only=True)
+    average_rating = serializers.FloatField(read_only=True)
+    
+    class Meta:
+        model = Product
+        fields = [
+            "id", "menu", "category", "name", "price", "description",
+            "thumbnail_url", "colors", "sizes", "images",
+            "posting_count", "average_rating",
+            "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+    
+    def get_colors(self, obj):
+        """사용 가능한 색상 목록"""
+        colors = obj.get_available_colors()
+        return ColorSerializer(colors, many=True).data
+    
+    def get_sizes(self, obj):
+        """사용 가능한 사이즈 목록"""
+        sizes = obj.get_available_sizes()
+        return SizeSerializer(sizes, many=True).data

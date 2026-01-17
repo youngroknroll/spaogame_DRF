@@ -1,5 +1,6 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
@@ -27,8 +28,44 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(unique=True)
-    name = models.CharField(max_length=150, blank=True)
+    """확장된 사용자 모델"""
+    
+    class Gender(models.TextChoices):
+        MALE = "M", "남성"
+        FEMALE = "F", "여성"
+    
+    # 필수 필드
+    email = models.EmailField(unique=True, verbose_name="이메일")
+    name = models.CharField(max_length=150, blank=True, verbose_name="이름")
+    
+    # 확장 필드
+    username = models.CharField(
+        max_length=50, 
+        blank=True, 
+        verbose_name="사용자명"
+    )
+    mobile_number = models.CharField(
+        max_length=20,
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r"^01[0-9]-\d{3,4}-\d{4}$",
+                message="전화번호 형식은 010-1234-5678 이어야 합니다."
+            )
+        ],
+        verbose_name="전화번호"
+    )
+    address1 = models.CharField(max_length=255, blank=True, verbose_name="주소1")
+    address2 = models.CharField(max_length=255, blank=True, verbose_name="주소2")
+    birthday = models.DateField(null=True, blank=True, verbose_name="생년월일")
+    gender = models.CharField(
+        max_length=1,
+        choices=Gender.choices,
+        blank=True,
+        verbose_name="성별"
+    )
+    
+    # 시스템 필드
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -37,6 +74,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    class Meta:
+        db_table = "users"
+        verbose_name = "사용자"
+        verbose_name_plural = "사용자 목록"
 
     def __str__(self):
         return self.email

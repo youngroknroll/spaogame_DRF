@@ -90,21 +90,21 @@
 
 ### Users 상세 필드
 
-* (미완료)[P1]회원가입 시 username, mobile_number, address1, address2, birthday, gender 를 저장할 수 있다
+* (완료)[P1]회원가입 시 username, mobile_number, address1, address2, birthday, gender 를 저장할 수 있다
 * (미완료)[P2]gender 목록을 조회할 수 있다
 
 ### Products 확장 기능
 
-* (미완료)[P1]상품 메인 썸네일 목록을 조회할 수 있다
-* (미완료)[P1]상품 상세에서 색상/사이즈/이미지 정보가 포함된다
-* (미완료)[P2]상품 상세에 후기/댓글 집계 정보가 포함된다
+* (완료)[P1]상품 메인 썸네일 목록을 조회할 수 있다
+* (완료)[P1]상품 상세에서 색상/사이즈/이미지 정보가 포함된다
+* (완료)[P2]상품 상세에 후기/댓글 집계 정보가 포함된다
 
 ### Products 상세 도메인
 
-* (미완료)[P1]색상(Color)을 등록/조회할 수 있다
-* (미완료)[P1]사이즈(Size)를 등록/조회할 수 있다
-* (미완료)[P1]상품 이미지(Image)를 등록/조회할 수 있다
-* (미완료)[P1]상세 상품(DetailedProduct: color/size/product)을 등록/조회할 수 있다
+* (완료)[P1]색상(Color)을 등록/조회할 수 있다
+* (완료)[P1]사이즈(Size)를 등록/조회할 수 있다
+* (완료)[P1]상품 이미지(Image)를 등록/조회할 수 있다
+* (완료)[P1]상세 상품(DetailedProduct: color/size/product)을 등록/조회할 수 있다
 
 ### Orders/Wishlist
 
@@ -112,8 +112,8 @@
 
 ### Orders/Cart (상세 상품 기반)
 
-* (미완료)[P1]장바구니에 상세 상품(color/size 포함)을 담을 수 있다 [AUTH 필요]
-* (미완료)[P1]장바구니 항목의 상세 상품 정보를 포함해 조회된다 [AUTH 필요]
+* (완료)[P1]장바구니에 상세 상품(color/size 포함)을 담을 수 있다 [AUTH 필요]
+* (완료)[P1]장바구니 항목의 상세 상품 정보를 포함해 조회된다 [AUTH 필요]
 
 
 

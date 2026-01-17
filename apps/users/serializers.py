@@ -6,11 +6,17 @@ User = get_user_model()
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    """회원가입 시리얼라이저 (확장 필드 포함)"""
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ["email", "password", "name"]
+        fields = [
+            "email", "password", "name",
+            "username", "mobile_number", 
+            "address1", "address2", 
+            "birthday", "gender"
+        ]
 
     def validate_email(self, value):
         """이메일 정규화 (소문자 변환)"""
@@ -19,6 +25,12 @@ class SignUpSerializer(serializers.ModelSerializer):
     def validate_password(self, value):
         """비밀번호 검증"""
         validate_password(value)
+        return value
+    
+    def validate_gender(self, value):
+        """성별 검증"""
+        if value and value not in ["M", "F"]:
+            raise serializers.ValidationError("성별은 M(남성) 또는 F(여성)이어야 합니다.")
         return value
 
     def create(self, validated_data):

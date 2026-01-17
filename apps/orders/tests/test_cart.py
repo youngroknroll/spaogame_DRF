@@ -140,3 +140,58 @@ def test_권한_다른_사용자의_장바구니는_수정하거나_삭제할_�
     
     # Then - 404 오류 발생
     assert delete_response.status_code == 404
+
+
+# ============================================================
+# P1: 상세 상품 기반 장바구니 테스트
+# ============================================================
+
+def test_인증_장바구니에_상세상품을_담을_수_있다(add_detailed_to_cart, sample_detailed_product_for_cart):
+    """
+    Given: 로그인한 사용자와 상세 상품(color/size)이 있을 때
+    When: 상세 상품을 장바구니에 담으면
+    Then: 장바구니에 상세 상품이 추가된다
+    """
+    # Given
+    payload = {
+        "detailed_product_id": sample_detailed_product_for_cart.id,
+        "quantity": 2
+    }
+    
+    # When
+    response = add_detailed_to_cart(payload)
+    
+    # Then
+    assert response.status_code == 201
+    assert response.data["detailed_product"]["id"] == sample_detailed_product_for_cart.id
+    assert response.data["detailed_product"]["color_name"] == "블랙"
+    assert response.data["detailed_product"]["size_name"] == "M"
+    assert response.data["quantity"] == 2
+
+
+def test_인증_장바구니_조회시_상세상품_정보가_포함된다(
+    add_detailed_to_cart, get_cart, sample_detailed_product_for_cart
+):
+    """
+    Given: 상세 상품이 장바구니에 담겨 있을 때
+    When: 장바구니를 조회하면
+    Then: 상세 상품의 색상/사이즈 정보가 포함된다
+    """
+    # Given - 상세 상품을 장바구니에 담기
+    payload = {
+        "detailed_product_id": sample_detailed_product_for_cart.id,
+        "quantity": 1
+    }
+    add_detailed_to_cart(payload)
+    
+    # When
+    response = get_cart()
+    
+    # Then
+    assert response.status_code == 200
+    assert len(response.data["items"]) >= 1
+    
+    item = response.data["items"][0]
+    assert "detailed_product" in item
+    assert item["detailed_product"]["color_name"] == "블랙"
+    assert item["detailed_product"]["size_name"] == "M"
