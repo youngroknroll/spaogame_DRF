@@ -5,7 +5,12 @@ Products 앱 테스트 픽스처
 """
 import pytest
 from apps.products.models import Product
-from apps.conftest import API_PRODUCTS_MENUS, API_PRODUCTS_CATEGORIES
+from apps.conftest import (
+    API_PRODUCTS_MENUS,
+    API_PRODUCTS_CATEGORIES,
+    API_PRODUCTS,
+    API_PRODUCT_DETAIL,
+)
 
 
 @pytest.fixture
@@ -68,7 +73,6 @@ def create_category(auth_client):
 def create_product(auth_client):
     """상품 등록 헬퍼 (관리자 인증)"""
     def _create_product(payload):
-        from apps.conftest import API_PRODUCTS
         return auth_client.post(API_PRODUCTS, payload)
     return _create_product
 
@@ -77,7 +81,6 @@ def create_product(auth_client):
 def create_product_as_user(user_client):
     """상품 등록 헬퍼 (일반 사용자 인증)"""
     def _create_product(payload):
-        from apps.conftest import API_PRODUCTS
         return user_client.post(API_PRODUCTS, payload)
     return _create_product
 
@@ -86,7 +89,6 @@ def create_product_as_user(user_client):
 def get_products(api_client, db):
     """상품 목록 조회 헬퍼 (DB 접근 필요)"""
     def _get_products(menu_id=None, category_id=None):
-        from apps.conftest import API_PRODUCTS
         params = {}
         if menu_id:
             params["menu"] = menu_id
@@ -100,7 +102,6 @@ def get_products(api_client, db):
 def get_products_with_ordering(api_client, db):
     """상품 목록 조회 헬퍼 - 정렬 지원 (DB 접근 필요)"""
     def _get_products(menu_id=None, category_id=None, ordering=None):
-        from apps.conftest import API_PRODUCTS
         params = {}
         if menu_id:
             params["menu"] = menu_id
@@ -116,7 +117,6 @@ def get_products_with_ordering(api_client, db):
 def get_product_detail(api_client, db):
     """상품 상세 조회 헬퍼 (DB 접근 필요)"""
     def _get_product_detail(product_id):
-        from apps.conftest import API_PRODUCT_DETAIL
         url = API_PRODUCT_DETAIL.format(product_id=product_id)
         return api_client.get(url)
     return _get_product_detail

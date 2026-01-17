@@ -4,13 +4,13 @@ Postings 앱 테스트 픽스처
 - 이 파일에는 Postings 앱 전용 픽스처만 정의
 """
 import pytest
+from apps.conftest import API_POSTINGS, API_COMMENTS, API_COMMENT
 
 
 @pytest.fixture
 def create_posting(user_client, db):
     """후기 작성 헬퍼 (인증된 사용자)"""
     def _create_posting(product_id, payload):
-        from apps.conftest import API_POSTINGS
         url = API_POSTINGS.format(product_id=product_id)
         return user_client.post(url, payload)
     return _create_posting
@@ -20,7 +20,6 @@ def create_posting(user_client, db):
 def create_posting_anonymous(api_client, db):
     """후기 작성 헬퍼 (비인증 사용자)"""
     def _create_posting(product_id, payload):
-        from apps.conftest import API_POSTINGS
         url = API_POSTINGS.format(product_id=product_id)
         return api_client.post(url, payload)
     return _create_posting
@@ -30,7 +29,6 @@ def create_posting_anonymous(api_client, db):
 def create_comment(user_client, db):
     """댓글 작성 헬퍼 (인증된 사용자)"""
     def _create_comment(posting_id, payload):
-        from apps.conftest import API_COMMENTS
         url = API_COMMENTS.format(posting_id=posting_id)
         return user_client.post(url, payload)
     return _create_comment
@@ -40,7 +38,6 @@ def create_comment(user_client, db):
 def delete_comment(user_client, db):
     """댓글 삭제 헬퍼 (인증된 사용자)"""
     def _delete_comment(posting_id, comment_id):
-        from apps.conftest import API_COMMENT
         url = API_COMMENT.format(posting_id=posting_id, comment_id=comment_id)
         return user_client.delete(url)
     return _delete_comment
