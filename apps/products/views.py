@@ -2,6 +2,7 @@ from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Menu, Category, Product
 from .serializers import MenuSerializer, CategorySerializer, ProductSerializer
@@ -59,7 +60,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["menu", "category"]
-    filter_backends = [OrderingFilter]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ["name", "price", "created_at"]
     ordering = ["id"]  # 기본 정렬
 

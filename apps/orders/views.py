@@ -37,6 +37,13 @@ def cart_list(request):
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity', 1)
 
+        # product_id 검증
+        if not product_id:
+            return Response(
+                {"error": "상품 ID는 필수입니다."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
             quantity = int(quantity)
         except (TypeError, ValueError):
