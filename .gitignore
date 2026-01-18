@@ -73,3 +73,4 @@ dmypy.json
 *.key
 
 .gitignore
+.docs
