@@ -7,12 +7,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Wishlist, WishlistItem
 from .serializers import (
     CartSerializer,
     CartItemSerializer,
     CartAddSerializer,
     CartUpdateSerializer,
+    WishlistSerializer,
+    WishlistItemSerializer,
+    WishlistAddSerializer,
 )
 from apps.products.models import Product, DetailedProduct
 
@@ -104,3 +107,53 @@ class CartItemDetailView(generics.UpdateAPIView, generics.DestroyAPIView):
         cart_item = self.get_object()
         cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class WishlistView(APIView):
+    """
+    위시리스트 조회 및 상품 추가
+    - GET: 위시리스트 조회 (없으면 빈 위시리스트 반환)
+    - POST: 위시리스트에 상품 추가
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """위시리스트 조회"""
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+
+        if not wishlist:
+            return Response({"id": None, "items": [], "created_at": None, "updated_at": None})
+
+        serializer = WishlistSerializer(wishlist)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """위시리스트에 상품 추가"""
+        serializer = WishlistAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        product_id = serializer.validated_data["product_id"]
+        product = get_object_or_404(Product, id=product_id)
+
+        wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+        wishlist_item, created = WishlistItem.objects.get_or_create(
+            wishlist=wishlist,
+            product=product
+        )
+
+        response_serializer = WishlistItemSerializer(wishlist_item)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(response_serializer.data, status=status_code)
+
+
+class WishlistItemDetailView(generics.DestroyAPIView):
+    """
+    위시리스트 항목 삭제
+    - DELETE: 항목 제거
+    """
+    permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = "item_id"
+
+    def get_queryset(self):
+        """현재 사용자의 위시리스트 항목만 조회"""
+        return WishlistItem.objects.filter(wishlist__user=self.request.user)

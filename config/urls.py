@@ -24,4 +24,5 @@ urlpatterns = [
     path("api/", include("apps.postings.urls")),  # products와 postings 경로 포함
     path("api/products/", include("apps.products.urls")),
     path("api/cart/", include("apps.orders.urls")),
+    path("api/wishlist/", include("apps.orders.wishlist_urls")),
 ]

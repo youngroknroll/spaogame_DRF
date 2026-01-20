@@ -35,3 +35,9 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+
+class GenderChoiceSerializer(serializers.Serializer):
+    """성별 선택지 응답 시리얼라이저"""
+    value = serializers.CharField()
+    label = serializers.CharField()

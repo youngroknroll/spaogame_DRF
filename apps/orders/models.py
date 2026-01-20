@@ -64,3 +64,55 @@ class CartItem(TimeStampedModel):
         if self.detailed_product:
             return f"{self.cart.user.email} - {self.detailed_product} ({self.quantity}개)"
         return f"{self.cart.user.email} - {self.product.name} ({self.quantity}개)"
+
+
+class Wishlist(TimeStampedModel):
+    """
+    사용자별 위시리스트
+    """
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="wishlist",
+        verbose_name="사용자"
+    )
+
+    class Meta:
+        db_table = "wishlists"
+        verbose_name = "위시리스트"
+        verbose_name_plural = "위시리스트 목록"
+
+    def __str__(self):
+        return f"{self.user.email}의 위시리스트"
+
+
+class WishlistItem(TimeStampedModel):
+    """
+    위시리스트 항목
+    """
+    wishlist = models.ForeignKey(
+        Wishlist,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="위시리스트"
+    )
+    product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.CASCADE,
+        related_name="wishlisted_items",
+        verbose_name="상품"
+    )
+
+    class Meta:
+        db_table = "wishlist_items"
+        verbose_name = "위시리스트 항목"
+        verbose_name_plural = "위시리스트 항목 목록"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["wishlist", "product"],
+                name="unique_wishlist_product"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.wishlist.user.email} - {self.product.name}"

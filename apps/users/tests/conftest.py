@@ -5,6 +5,7 @@ import pytest
 from apps.conftest import (
     API_USERS_SIGNUP,
     API_USERS_LOGIN,
+    API_USERS_GENDERS,
     TEST_USER_EMAIL,
     TEST_USER_PASSWORD,
     TEST_USER_NAME,
@@ -58,3 +59,11 @@ def login(api_client, db):
     def _login(credentials):
         return api_client.post(API_USERS_LOGIN, credentials)
     return _login
+
+
+@pytest.fixture
+def get_genders(api_client):
+    """성별 목록 조회 헬퍼"""
+    def _get_genders():
+        return api_client.get(API_USERS_GENDERS)
+    return _get_genders
