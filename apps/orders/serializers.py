@@ -27,12 +27,12 @@ class CartSerializer(serializers.ModelSerializer):
 
 class CartAddSerializer(serializers.Serializer):
     """장바구니 추가 요청 시리얼라이저 (입력용) - 상품 또는 상세상품"""
-    product_id = serializers.IntegerField(min_value=1, required=False, help_text="상품 ID")
-    detailed_product_id = serializers.IntegerField(min_value=1, required=False, help_text="상세상품 ID")
+    product_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, help_text="상품 ID")
+    detailed_product_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, help_text="상세상품 ID")
     quantity = serializers.IntegerField(default=1, min_value=1, help_text="수량")
     
     def validate(self, attrs):
-        """product_id 또는 detailed_product_id 중 하나는 필수"""
+        """product_id 또는 detailed_product_id 중 정확히 하나는 필수"""
         product_id = attrs.get("product_id")
         detailed_product_id = attrs.get("detailed_product_id")
         
@@ -45,6 +45,25 @@ class CartAddSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 "product_id와 detailed_product_id 중 하나만 입력해주세요."
             )
+        
+        # 유효한 product 또는 detailed_product 존재 여부 확인
+        if product_id:
+            from apps.products.models import Product
+            try:
+                Product.objects.get(id=product_id)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"product_id": "해당 상품이 존재하지 않습니다."}
+                )
+        
+        if detailed_product_id:
+            from apps.products.models import DetailedProduct
+            try:
+                DetailedProduct.objects.get(id=detailed_product_id)
+            except DetailedProduct.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"detailed_product_id": "해당 상세상품이 존재하지 않습니다."}
+                )
         
         return attrs
 

@@ -70,12 +70,12 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def validate(self, attrs):
         """카테고리가 메뉴에 속하는지 검증"""
-        menu = attrs.get("menu")
-        category = attrs.get("category")
+        menu = attrs.get("menu") or (self.instance.menu if self.instance else None)
+        category = attrs.get("category") or (self.instance.category if self.instance else None)
         
         if menu and category and category.menu != menu:
             raise serializers.ValidationError({
-                "category": "카테고리는 선택한 메뉴에 속해야 합니다."
+                "category": "선택한 카테고리는 해당 메뉴에 속해야 합니다."
             })
         
         return attrs

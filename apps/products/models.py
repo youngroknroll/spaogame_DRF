@@ -92,6 +92,14 @@ class Product(TimeStampedModel):
         verbose_name_plural = "상품"
         ordering = ["id"]
 
+    def clean(self):
+        """모델 검증: 카테고리가 메뉴에 속하는지 확인"""
+        from django.core.exceptions import ValidationError
+        if self.menu and self.category and self.category.menu != self.menu:
+            raise ValidationError(
+                {"category": "선택한 카테고리는 해당 메뉴에 속해야 합니다."}
+            )
+
     def __str__(self):
         return self.name
     
