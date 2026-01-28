@@ -204,40 +204,51 @@ uv run python manage.py runserver
 
 ### API 엔드포인트
 
-#### 인증
+#### 인증 및 사용자
 - `POST /api/users/signup/` - 회원가입
-- `POST /api/users/login/` - 로그인
-- `POST /api/users/logout/` - 로그아웃
-- `GET /api/users/profile/` - 프로필 조회
-- `PATCH /api/users/profile/` - 프로필 수정
+- `POST /api/users/login/` - 로그인 (JWT 토큰 발급)
+- `GET /api/users/genders/` - 성별 목록 조회
+- `GET /api/users/profile/` - 프로필 조회 (인증 필요)
+- `PATCH /api/users/profile/` - 프로필 수정 (인증 필요)
 
 #### 상품
 - `GET /api/products/menus/` - 메뉴 목록
-- `GET /api/products/categories/` - 카테고리 목록
-- `GET /api/products/` - 상품 목록 (필터링, 검색 지원)
-- `GET /api/products/{id}/` - 상품 상세 조회
+- `POST /api/products/menus/` - 메뉴 등록 (관리자)
+- `GET /api/products/menus/{menu_id}/categories/` - 특정 메뉴의 카테고리 목록
+- `POST /api/products/menus/{menu_id}/categories/` - 카테고리 등록 (관리자)
 - `GET /api/products/colors/` - 색상 목록
+- `POST /api/products/colors/` - 색상 등록 (관리자)
 - `GET /api/products/sizes/` - 사이즈 목록
-- `GET /api/products/detailed/{id}/` - 상세 상품 조회
+- `POST /api/products/sizes/` - 사이즈 등록 (관리자)
+- `GET /api/products/` - 상품 목록 (필터링, 정렬 지원)
+- `POST /api/products/` - 상품 등록 (관리자)
+- `GET /api/products/{product_id}/` - 상품 상세 조회
+- `GET /api/products/{product_id}/images/` - 상품 이미지 목록
+- `POST /api/products/{product_id}/images/` - 상품 이미지 등록 (관리자)
+- `GET /api/products/{product_id}/detailed/` - 상세 상품 목록 (색상/사이즈 조합)
+- `POST /api/products/{product_id}/detailed/` - 상세 상품 등록 (관리자)
 
 #### 장바구니
-- `GET /api/orders/cart/` - 장바구니 조회
-- `POST /api/orders/cart/add/` - 장바구니에 상품 추가
-- `PATCH /api/orders/cart/{item_id}/` - 장바구니 항목 수정
-- `DELETE /api/orders/cart/{item_id}/` - 장바구니 항목 삭제
+- `GET /api/cart/` - 장바구니 조회 (인증 필요)
+- `POST /api/cart/` - 장바구니에 상품 추가 (인증 필요)
+- `PATCH /api/cart/{item_id}/` - 장바구니 항목 수정 (인증 필요)
+- `DELETE /api/cart/{item_id}/` - 장바구니 항목 삭제 (인증 필요)
 
 #### 위시리스트
-- `GET /api/orders/wishlist/` - 위시리스트 조회
-- `POST /api/orders/wishlist/add/` - 위시리스트에 상품 추가
-- `DELETE /api/orders/wishlist/{item_id}/` - 위시리스트 항목 삭제
+- `GET /api/wishlist/` - 위시리스트 조회 (인증 필요)
+- `POST /api/wishlist/` - 위시리스트에 상품 추가 (인증 필요)
+- `DELETE /api/wishlist/{item_id}/` - 위시리스트 항목 삭제 (인증 필요)
 
-#### 게시판
-- `GET /api/postings/` - 게시글 목록
-- `POST /api/postings/` - 게시글 작성
-- `GET /api/postings/{id}/` - 게시글 상세 조회
-- `PATCH /api/postings/{id}/` - 게시글 수정
-- `DELETE /api/postings/{id}/` - 게시글 삭제
-- `POST /api/postings/{id}/comments/` - 댓글 작성
+#### 후기 (Postings)
+- `GET /api/postings/` - 후기 목록 조회
+- `GET /api/postings/{posting_id}/` - 후기 상세 조회
+- `POST /api/products/{product_id}/postings/` - 후기 작성 (인증 필요)
+- `PATCH /api/postings/{posting_id}/` - 후기 수정 (본인만, 인증 필요)
+- `DELETE /api/postings/{posting_id}/` - 후기 삭제 (본인만, 인증 필요)
+
+#### 댓글 (Comments)
+- `POST /api/postings/{posting_id}/comments/` - 댓글 작성 (인증 필요)
+- `DELETE /api/postings/{posting_id}/comments/{comment_id}/` - 댓글 삭제 (본인만, 인증 필요)
 
 ### 자동 API 문서
 - **Swagger UI**: `/api/schema/swagger-ui/`

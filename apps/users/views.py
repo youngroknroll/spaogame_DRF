@@ -1,9 +1,9 @@
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 
-from .serializers import SignUpSerializer, GenderChoiceSerializer
+from .serializers import SignUpSerializer, GenderChoiceSerializer, ProfileSerializer
 
 User = get_user_model()
 
@@ -25,3 +25,17 @@ class GenderListView(generics.GenericAPIView):
         ]
         serializer = self.get_serializer(choices, many=True)
         return Response(serializer.data)
+
+
+class ProfileView(generics.RetrieveUpdateAPIView):
+    """
+    프로필 조회 및 수정
+    - GET: 본인 프로필 조회
+    - PATCH: 본인 프로필 수정
+    """
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        """현재 로그인한 사용자 반환"""
+        return self.request.user

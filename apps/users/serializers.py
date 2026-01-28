@@ -41,3 +41,24 @@ class GenderChoiceSerializer(serializers.Serializer):
     """성별 선택지 응답 시리얼라이저"""
     value = serializers.CharField()
     label = serializers.CharField()
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    """프로필 조회/수정 시리얼라이저"""
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "email", "name",
+            "username", "mobile_number",
+            "address1", "address2",
+            "birthday", "gender",
+            "date_joined",
+        ]
+        read_only_fields = ["id", "email", "date_joined"]
+
+    def validate_gender(self, value):
+        """성별 검증"""
+        if value and value not in ["M", "F"]:
+            raise serializers.ValidationError("성별은 M(남성) 또는 F(여성)이어야 합니다.")
+        return value

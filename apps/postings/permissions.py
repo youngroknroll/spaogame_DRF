@@ -12,3 +12,13 @@ class IsCommentOwner(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user
+
+
+class IsPostingOwner(BasePermission):
+    """
+    후기 작성자만 수정/삭제 가능
+    """
+    message = "본인의 후기만 수정/삭제할 수 있습니다."
+
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
