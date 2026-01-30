@@ -235,6 +235,7 @@ uv run python manage.py runserver
 - `POST /api/products/{product_id}/images/` - 상품 이미지 등록 (관리자 전용)
 - `GET /api/products/{product_id}/detailed/` - 상세 상품 목록, 색상/사이즈 조합 (공개)
 - `POST /api/products/{product_id}/detailed/` - 상세 상품 등록 (관리자 전용)
+- `POST /api/products/{product_id}/postings/` - 상품 후기 작성 (인증 필요)
 
 #### 장바구니
 - `GET /api/cart/` - 장바구니 조회 (인증 필요, 본인만)

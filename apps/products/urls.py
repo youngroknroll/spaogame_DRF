@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from apps.postings.views import PostingCreateView
 
 app_name = "products"
 
@@ -20,4 +21,5 @@ urlpatterns = [
     # 상품 하위 리소스
     path("<int:product_id>/images/", views.ImageListCreateView.as_view(), name="image-list-create"),
     path("<int:product_id>/detailed/", views.DetailedProductListCreateView.as_view(), name="detailed-product-list-create"),
+    path("<int:product_id>/postings/", PostingCreateView.as_view(), name="posting-create"),
 ]

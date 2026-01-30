@@ -12,13 +12,10 @@ from .views import (
 
 urlpatterns = [
     # 후기 목록 및 상세
-    path("postings/", PostingListView.as_view(), name="posting-list"),
-    path("postings/<int:posting_id>/", PostingDetailView.as_view(), name="posting-detail"),
-
-    # 후기 작성
-    path("products/<int:product_id>/postings/", PostingCreateView.as_view(), name="posting-create"),
+    path("", PostingListView.as_view(), name="posting-list"),
+    path("<int:posting_id>/", PostingDetailView.as_view(), name="posting-detail"),
 
     # 댓글
-    path("postings/<int:posting_id>/comments/", CommentCreateView.as_view(), name="comment-create"),
-    path("postings/<int:posting_id>/comments/<int:comment_id>/", CommentDeleteView.as_view(), name="comment-delete"),
+    path("<int:posting_id>/comments/", CommentCreateView.as_view(), name="comment-create"),
+    path("<int:posting_id>/comments/<int:comment_id>/", CommentDeleteView.as_view(), name="comment-delete"),
 ]
