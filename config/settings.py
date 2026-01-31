@@ -165,3 +165,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom user model
 AUTH_USER_MODEL = "users.User"
+
+# Cache settings
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+        "OPTIONS": {
+            "MAX_ENTRIES": 1000,
+        }
+    }
+}
+
+# Cache timeouts
+CACHE_TTL = {
+    "MENU": 60 * 60 * 24,  # 24시간 (거의 변하지 않음)
+    "CATEGORY": 60 * 60 * 12,  # 12시간
+    "PRODUCT_LIST": 60 * 15,  # 15분
+    "PRODUCT_DETAIL": 60 * 10,  # 10분
+    "RATING": 60 * 5,  # 5분 (평점은 자주 갱신)
+    "STOCK": 60,  # 1분 (재고는 가장 짧게)
+}
