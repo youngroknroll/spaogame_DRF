@@ -1,0 +1,501 @@
+{
+  "info": {
+    "name": "SPAOGAME API - Cache Tests",
+    "description": "캐싱 구현 테스트를 위한 Postman Collection\n\n## 테스트 순서:\n1. Auth: 사용자 등록/로그인\n2. Cache Tests: 공개 엔드포인트 캐시 확인\n3. Cache Invalidation: 후기 작성 후 평점 캐시 무효화 확인",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "회원가입",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"testpassword123\",\n  \"name\": \"테스트유저\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/signup/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "signup", ""]
+            },
+            "description": "새로운 사용자 등록"
+          }
+        },
+        {
+          "name": "로그인",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.access) {",
+                  "    pm.environment.set('token', response.access);",
+                  "    console.log('✅ JWT 토큰 저장 완료');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"testpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "login", ""]
+            },
+            "description": "로그인 후 JWT 토큰을 환경 변수에 자동 저장"
+          }
+        },
+        {
+          "name": "내 프로필 조회",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users", "profile", ""]
+            },
+            "description": "JWT 인증 테스트"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cache Tests - Public Endpoints",
+      "item": [
+        {
+          "name": "메뉴 목록 (24h cache) - 1st request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseTime = pm.response.responseTime;",
+                  "console.log(`⏱️ 첫 번째 요청 응답시간: ${responseTime}ms (캐시 생성)`);",
+                  "pm.environment.set('menu_first_response_time', responseTime);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/menus/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "menus", ""]
+            },
+            "description": "첫 번째 요청 - 캐시 생성 (DB 쿼리 실행)"
+          }
+        },
+        {
+          "name": "메뉴 목록 (24h cache) - 2nd request (cached)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseTime = pm.response.responseTime;",
+                  "const firstTime = pm.environment.get('menu_first_response_time');",
+                  "console.log(`⏱️ 두 번째 요청 응답시간: ${responseTime}ms (캐시 사용)`);",
+                  "console.log(`📊 성능 개선: ${((firstTime - responseTime) / firstTime * 100).toFixed(1)}%`);",
+                  "",
+                  "pm.test('캐시가 작동하여 응답이 빨라짐', function () {",
+                  "    pm.expect(responseTime).to.be.below(firstTime);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/menus/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "menus", ""]
+            },
+            "description": "두 번째 요청 - 캐시 사용 (훨씬 빠름)"
+          }
+        },
+        {
+          "name": "카테고리 목록 (12h cache)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/menus/1/categories/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "menus", "1", "categories", ""]
+            },
+            "description": "메뉴 ID 1의 카테고리 목록"
+          }
+        },
+        {
+          "name": "색상 목록 (12h cache)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/colors/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "colors", ""]
+            }
+          }
+        },
+        {
+          "name": "사이즈 목록 (12h cache)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/sizes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "sizes", ""]
+            }
+          }
+        },
+        {
+          "name": "상품 목록 (15m cache) - 1st",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseTime = pm.response.responseTime;",
+                  "console.log(`⏱️ 상품 목록 첫 요청: ${responseTime}ms`);",
+                  "pm.environment.set('product_list_first', responseTime);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", ""]
+            }
+          }
+        },
+        {
+          "name": "상품 목록 (15m cache) - 2nd (cached)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseTime = pm.response.responseTime;",
+                  "const firstTime = pm.environment.get('product_list_first');",
+                  "console.log(`⏱️ 상품 목록 두 번째: ${responseTime}ms (캐시)`);",
+                  "console.log(`📊 개선율: ${((firstTime - responseTime) / firstTime * 100).toFixed(1)}%`);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", ""]
+            }
+          }
+        },
+        {
+          "name": "상품 상세 (10m cache)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "console.log(`📊 현재 평점: ${response.average_rating}`);",
+                  "console.log(`📊 후기 개수: ${response.posting_count}`);",
+                  "",
+                  "// 나중에 비교를 위해 저장",
+                  "pm.environment.set('rating_before', response.average_rating);",
+                  "pm.environment.set('count_before', response.posting_count);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "1", ""]
+            },
+            "description": "평점과 후기 개수 확인 (키 기반 캐싱)"
+          }
+        }
+      ],
+      "description": "cache_page로 캐싱된 공개 엔드포인트 테스트"
+    },
+    {
+      "name": "Cache Invalidation Test",
+      "item": [
+        {
+          "name": "STEP 1: 상품 상세 조회 (캐시 생성)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.environment.set('rating_before', response.average_rating || 0);",
+                  "pm.environment.set('count_before', response.posting_count || 0);",
+                  "",
+                  "console.log('='.repeat(50));",
+                  "console.log('📊 STEP 1: 후기 작성 전');",
+                  "console.log('='.repeat(50));",
+                  "console.log(`⭐ 평점: ${response.average_rating}`);",
+                  "console.log(`📝 후기 개수: ${response.posting_count}`);",
+                  "console.log('='.repeat(50));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "1", ""]
+            },
+            "description": "후기 작성 전 상태 확인"
+          }
+        },
+        {
+          "name": "STEP 2: 후기 작성 (캐시 무효화 트리거)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "console.log('='.repeat(50));",
+                  "console.log('✍️ STEP 2: 후기 작성 완료');",
+                  "console.log('='.repeat(50));",
+                  "console.log('🔄 평점/개수 캐시가 무효화됨');",
+                  "console.log('='.repeat(50));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"content\": \"정말 좋은 상품입니다! Postman 테스트 중입니다.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/1/postings/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "1", "postings", ""]
+            },
+            "description": "후기 작성 시 signal이 발동하여 평점/개수 캐시 무효화"
+          }
+        },
+        {
+          "name": "STEP 3: 상품 상세 재조회 (캐시 무효화 확인)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const ratingBefore = parseFloat(pm.environment.get('rating_before')) || 0;",
+                  "const countBefore = parseInt(pm.environment.get('count_before')) || 0;",
+                  "",
+                  "console.log('='.repeat(50));",
+                  "console.log('📊 STEP 3: 후기 작성 후');",
+                  "console.log('='.repeat(50));",
+                  "console.log(`⭐ 평점: ${ratingBefore} → ${response.average_rating}`);",
+                  "console.log(`📝 후기 개수: ${countBefore} → ${response.posting_count}`);",
+                  "console.log('='.repeat(50));",
+                  "",
+                  "pm.test('✅ 후기 개수 증가', function () {",
+                  "    pm.expect(response.posting_count).to.be.above(countBefore);",
+                  "});",
+                  "",
+                  "pm.test('✅ 평점이 갱신됨', function () {",
+                  "    pm.expect(response.average_rating).to.exist;",
+                  "});",
+                  "",
+                  "console.log('');",
+                  "console.log('✅ 캐시 무효화 성공! 새로운 값이 반영되었습니다.');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "1", ""]
+            },
+            "description": "캐시가 무효화되어 새로운 평점/개수가 반영됨"
+          }
+        }
+      ],
+      "description": "후기 작성 시 평점/개수 캐시가 자동 무효화되는지 테스트"
+    },
+    {
+      "name": "Admin - Create Sample Data",
+      "item": [
+        {
+          "name": "메뉴 등록 (관리자)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"스포츠\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/menus/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "menus", ""]
+            },
+            "description": "관리자 권한 필요 (is_staff=True)"
+          }
+        },
+        {
+          "name": "카테고리 등록 (관리자)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menu\": 1,\n  \"name\": \"축구\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/menus/1/categories/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "menus", "1", "categories", ""]
+            }
+          }
+        },
+        {
+          "name": "상품 등록 (관리자)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menu\": 1,\n  \"category\": 1,\n  \"name\": \"나이키 축구화\",\n  \"price\": 150000,\n  \"description\": \"최고급 축구화\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", ""]
+            }
+          }
+        }
+      ],
+      "description": "테스트용 샘플 데이터 생성 (관리자 권한 필요)"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "default"
+    }
+  ]
+}

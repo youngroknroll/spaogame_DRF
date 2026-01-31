@@ -1,0 +1,698 @@
+{
+  "info": {
+    "name": "SPAOGAME API - Complete",
+    "description": "SPAOGAME API 전체 엔드포인트 모음\n\n## 사용 순서:\n1. Auth: 회원가입 → 로그인 (토큰 자동 저장)\n2. Products: 상품 관련 CRUD\n3. Postings: 후기 작성/조회/수정/삭제\n4. Cart & Wishlist: 장바구니, 위시리스트\n\n## 권한:\n- 🌍 AllowAny: 인증 불필요\n- 🔒 IsAuthenticated: JWT 토큰 필요\n- 👤 IsOwner: 본인 리소스만 수정/삭제\n- 👑 IsAdmin: 관리자 권한",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Auth & Users",
+      "item": [
+        {
+          "name": "회원가입 🌍",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepass123\",\n  \"name\": \"홍길동\",\n  \"phone_number\": \"010-1234-5678\",\n  \"gender\": \"M\",\n  \"address\": \"서울시 강남구\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/signup/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "signup", ""]
+            },
+            "description": "신규 사용자 등록 (인증 불필요)"
+          }
+        },
+        {
+          "name": "로그인 🌍",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.access) {",
+                  "    pm.environment.set('token', response.access);",
+                  "    console.log('✅ JWT 토큰 저장 완료');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "login", ""]
+            },
+            "description": "로그인 후 JWT 토큰 자동 저장"
+          }
+        },
+        {
+          "name": "성별 선택지 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/genders/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "genders", ""]
+            },
+            "description": "성별 선택지 목록 (M, F 등)"
+          }
+        },
+        {
+          "name": "내 프로필 조회 🔒",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile", ""]
+            },
+            "description": "로그인한 사용자 정보 조회"
+          }
+        },
+        {
+          "name": "내 프로필 수정 🔒",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"김철수\",\n  \"phone_number\": \"010-9876-5432\",\n  \"address\": \"서울시 서초구\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile", ""]
+            },
+            "description": "본인 프로필 수정 (부분 수정)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products - Menu & Category",
+      "item": [
+        {
+          "name": "메뉴 목록 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/menus/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "menus", ""]
+            }
+          }
+        },
+        {
+          "name": "메뉴 등록 👑",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"스포츠\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/menus/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "menus", ""]
+            },
+            "description": "관리자만 등록 가능"
+          }
+        },
+        {
+          "name": "카테고리 목록 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/menus/1/categories/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "menus", "1", "categories", ""]
+            },
+            "description": "특정 메뉴의 카테고리 목록"
+          }
+        },
+        {
+          "name": "카테고리 등록 👑",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menu\": 1,\n  \"name\": \"축구\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/menus/1/categories/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "menus", "1", "categories", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Products - Options",
+      "item": [
+        {
+          "name": "색상 목록 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/colors/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "colors", ""]
+            }
+          }
+        },
+        {
+          "name": "색상 등록 👑",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"블랙\",\n  \"code\": \"#000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/colors/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "colors", ""]
+            }
+          }
+        },
+        {
+          "name": "사이즈 목록 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/sizes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "sizes", ""]
+            }
+          }
+        },
+        {
+          "name": "사이즈 등록 👑",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"L\",\n  \"display_order\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/sizes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "sizes", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Products - Items",
+      "item": [
+        {
+          "name": "상품 목록 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", ""]
+            },
+            "description": "전체 상품 목록 (페이지네이션)"
+          }
+        },
+        {
+          "name": "상품 목록 - 메뉴 필터 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/?menu=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", ""],
+              "query": [
+                {"key": "menu", "value": "1"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "상품 목록 - 카테고리 필터 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/?category=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", ""],
+              "query": [
+                {"key": "category", "value": "1"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "상품 목록 - 정렬 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/?ordering=-price",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", ""],
+              "query": [
+                {"key": "ordering", "value": "-price", "description": "price, -price, name, -name, created_at"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "상품 등록 👑",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menu\": 1,\n  \"category\": 1,\n  \"name\": \"나이키 축구화 프리미엄\",\n  \"price\": 180000,\n  \"description\": \"최고급 소재의 프로페셔널 축구화\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", ""]
+            }
+          }
+        },
+        {
+          "name": "상품 상세 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", ""]
+            },
+            "description": "평점, 후기 개수, 색상/사이즈 옵션 포함"
+          }
+        },
+        {
+          "name": "상품 이미지 목록 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/1/images/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", "images", ""]
+            }
+          }
+        },
+        {
+          "name": "상품 이미지 등록 👑",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image_url\": \"https://example.com/image1.jpg\",\n  \"is_thumbnail\": true,\n  \"display_order\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/1/images/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", "images", ""]
+            }
+          }
+        },
+        {
+          "name": "상세 상품 목록 (재고) 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/1/detailed/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", "detailed", ""]
+            },
+            "description": "색상/사이즈 조합별 재고 정보"
+          }
+        },
+        {
+          "name": "상세 상품 등록 (재고) 👑",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": 1,\n  \"size\": 2,\n  \"stock\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/1/detailed/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", "detailed", ""]
+            },
+            "description": "색상/사이즈/재고 조합 등록"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Postings (Reviews)",
+      "item": [
+        {
+          "name": "후기 목록 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/postings/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "postings", ""]
+            },
+            "description": "전체 후기 목록"
+          }
+        },
+        {
+          "name": "후기 작성 🔒",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"content\": \"정말 좋은 상품이에요! 강력 추천합니다.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/1/postings/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", "postings", ""]
+            },
+            "description": "특정 상품에 대한 후기 작성"
+          }
+        },
+        {
+          "name": "후기 상세 조회 🌍",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/postings/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "postings", "1", ""]
+            },
+            "description": "댓글 포함"
+          }
+        },
+        {
+          "name": "후기 수정 👤",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"content\": \"수정된 후기 내용입니다.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/postings/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "postings", "1", ""]
+            },
+            "description": "본인이 작성한 후기만 수정 가능"
+          }
+        },
+        {
+          "name": "후기 삭제 👤",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/postings/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "postings", "1", ""]
+            },
+            "description": "본인이 작성한 후기만 삭제 가능"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Comments",
+      "item": [
+        {
+          "name": "댓글 작성 🔒",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"저도 이 상품 사용 중인데 정말 좋아요!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/postings/1/comments/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "postings", "1", "comments", ""]
+            },
+            "description": "특정 후기에 댓글 작성"
+          }
+        },
+        {
+          "name": "댓글 삭제 👤",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/postings/1/comments/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "postings", "1", "comments", "1", ""]
+            },
+            "description": "본인이 작성한 댓글만 삭제 가능"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Cart (장바구니)",
+      "item": [
+        {
+          "name": "장바구니 조회 🔒",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", ""]
+            },
+            "description": "내 장바구니 조회 (없으면 빈 장바구니 반환)"
+          }
+        },
+        {
+          "name": "장바구니에 상품 추가 🔒",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", ""]
+            },
+            "description": "기본 상품을 장바구니에 추가"
+          }
+        },
+        {
+          "name": "장바구니에 상세상품 추가 🔒",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detailed_product_id\": 1,\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", ""]
+            },
+            "description": "색상/사이즈가 지정된 상세상품을 장바구니에 추가"
+          }
+        },
+        {
+          "name": "장바구니 항목 수량 변경 🔒",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "1", ""]
+            },
+            "description": "특정 항목의 수량 변경"
+          }
+        },
+        {
+          "name": "장바구니 항목 삭제 🔒",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "1", ""]
+            },
+            "description": "장바구니에서 항목 제거"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Wishlist (위시리스트)",
+      "item": [
+        {
+          "name": "위시리스트 조회 🔒",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/wishlist/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wishlist", ""]
+            },
+            "description": "내 위시리스트 조회"
+          }
+        },
+        {
+          "name": "위시리스트에 상품 추가 🔒",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/wishlist/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wishlist", ""]
+            },
+            "description": "상품을 위시리스트에 추가"
+          }
+        },
+        {
+          "name": "위시리스트 항목 삭제 🔒",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/wishlist/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wishlist", "1", ""]
+            },
+            "description": "위시리스트에서 항목 제거"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "default"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "secret"
+    }
+  ]
+}
