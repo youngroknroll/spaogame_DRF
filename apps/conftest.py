@@ -139,3 +139,11 @@ def sample_product(db, sample_menu, sample_category):
         price=18000,
         description="바삭한 후라이드치킨"
     )
+
+
+@pytest.fixture
+def admin_client(api_client, admin_token):
+    """인증된 API 클라이언트 (관리자)"""
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {admin_token}")
+    return client

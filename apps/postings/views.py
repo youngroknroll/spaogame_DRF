@@ -1,12 +1,10 @@
 """
 Postings 앱 뷰 (CBV 방식)
 """
-from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
-from apps.products.models import Product
 from .models import Posting, Comment
 from .serializers import (
     PostingSerializer,
@@ -15,6 +13,7 @@ from .serializers import (
     CommentCreateSerializer,
 )
 from .permissions import IsCommentOwner, IsPostingOwner
+from .services import PostingService, CommentService
 
 
 class PostingListView(generics.ListAPIView):
@@ -31,18 +30,40 @@ class PostingDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     후기 상세 조회/수정/삭제
     - GET: 누구나 조회 가능
-    - PATCH: 본인만 수정 가능
-    - DELETE: 본인만 삭제 가능
+    - PATCH/DELETE: 로그인 필수, 권한 검증은 Service에서 수행
     """
     queryset = Posting.objects.all()
     serializer_class = PostingSerializer
     lookup_url_kwarg = "posting_id"
 
     def get_permissions(self):
-        """GET은 AllowAny, PATCH/DELETE는 인증 + 소유자 검증"""
+        """GET은 AllowAny, PATCH/DELETE는 인증만 (권한은 Service에서)"""
         if self.request.method == "GET":
             return [AllowAny()]
-        return [IsAuthenticated(), IsPostingOwner()]
+        return [IsAuthenticated()]
+
+    def update(self, request, *args, **kwargs):
+        """후기 수정 (Service Layer에 위임)"""
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        posting = PostingService.update_posting(
+            user=request.user,
+            posting_id=kwargs['posting_id'],
+            **serializer.validated_data
+        )
+
+        response_serializer = self.get_serializer(posting)
+        return Response(response_serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        """후기 삭제 (Service Layer에 위임)"""
+        PostingService.delete_posting(
+            user=request.user,
+            posting_id=kwargs['posting_id']
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PostingCreateView(generics.CreateAPIView):
@@ -55,14 +76,13 @@ class PostingCreateView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """후기 생성"""
-        product = get_object_or_404(Product, id=self.kwargs['product_id'])
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        posting = Posting.objects.create(
+        # Service에 위임
+        posting = PostingService.create_posting(
             user=request.user,
-            product=product,
+            product_id=self.kwargs['product_id'],
             **serializer.validated_data
         )
 
@@ -70,27 +90,44 @@ class PostingCreateView(generics.CreateAPIView):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-class CommentCreateView(generics.CreateAPIView):
+class CommentListCreateView(generics.ListCreateAPIView):
     """
-    댓글 작성
+    댓글 목록 조회 및 생성
+    - GET: 누구나 조회 가능
     - POST: 로그인 필수
     """
-    permission_classes = [IsAuthenticated]
-    serializer_class = CommentCreateSerializer
+    serializer_class = CommentSerializer
+
+    def get_permissions(self):
+        """GET은 AllowAny, POST는 인증 필요"""
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        """특정 후기의 댓글 목록 조회"""
+        return Comment.objects.filter(
+            posting_id=self.kwargs['posting_id']
+        ).select_related('user').order_by('created_at')
+
+    def get_serializer_class(self):
+        """GET은 CommentSerializer, POST는 CommentCreateSerializer"""
+        if self.request.method == "POST":
+            return CommentCreateSerializer
+        return CommentSerializer
 
     def create(self, request, *args, **kwargs):
         """댓글 생성"""
-        posting = get_object_or_404(Posting, id=self.kwargs['posting_id'])
-        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        comment = Comment.objects.create(
+
+        # Service에 위임
+        comment = CommentService.create_comment(
             user=request.user,
-            posting=posting,
+            posting_id=self.kwargs['posting_id'],
             **serializer.validated_data
         )
-        
+
         response_serializer = CommentSerializer(comment)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -98,12 +135,17 @@ class CommentCreateView(generics.CreateAPIView):
 class CommentDeleteView(generics.DestroyAPIView):
     """
     댓글 삭제
-    - DELETE: 본인이 작성한 댓글만 삭제 가능
+    - DELETE: 로그인 필수, 권한 검증은 Service에서 수행
     """
-    permission_classes = [IsAuthenticated, IsCommentOwner]
-    queryset = Comment.objects.all()
-    lookup_url_kwarg = "comment_id"
+    permission_classes = [IsAuthenticated]
+    serializer_class = CommentSerializer
 
-    def get_queryset(self):
-        """해당 posting의 댓글만 필터링"""
-        return Comment.objects.filter(posting_id=self.kwargs['posting_id'])
+    def destroy(self, request, *args, **kwargs):
+        """댓글 삭제 (Service Layer에 위임)"""
+        # Service에서 권한 검증 + 삭제 수행
+        CommentService.delete_comment(
+            user=request.user,
+            posting_id=kwargs['posting_id'],
+            comment_id=kwargs['comment_id']
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)

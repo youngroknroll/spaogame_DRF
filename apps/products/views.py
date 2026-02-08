@@ -1,3 +1,6 @@
+"""
+Products 앱 뷰 (CBV 방식)
+"""
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
@@ -10,6 +13,7 @@ from .serializers import (
     MenuSerializer, CategorySerializer, ProductSerializer, ProductDetailSerializer,
     ColorSerializer, SizeSerializer, ImageSerializer, DetailedProductSerializer
 )
+from .selectors import ProductSelector, MenuSelector
 from apps.core.permissions import IsAdminOrReadOnly
 
 
@@ -36,21 +40,21 @@ class CategoryListCreateView(generics.ListCreateAPIView):
     pagination_class = None  # 카테고리는 페이지네이션 불필요
 
     def get_queryset(self):
-        """URL 파라미터의 menu_id로 필터링"""
+        """URL 파라미터의 menu_id로 필터링 (Selector 사용)"""
         menu_id = self.kwargs.get("menu_id")
-        return Category.objects.filter(menu_id=menu_id)
+        return MenuSelector.get_categories_by_menu(menu_id)
 
     def perform_create(self, serializer):
         """URL의 menu_id 검증 및 강제 적용"""
         url_menu_id = self.kwargs.get("menu_id")
         payload_menu_id = self.request.data.get("menu")
-        
+
         # payload의 menu가 URL의 menu_id와 다르면 에러
         if payload_menu_id and str(payload_menu_id) != str(url_menu_id):
             raise ValidationError({
                 "menu": "URL의 메뉴 ID와 일치해야 합니다."
             })
-        
+
         serializer.save(menu_id=url_menu_id)
 
 
@@ -80,7 +84,6 @@ class ProductListCreateView(generics.ListCreateAPIView):
     - GET: 누구나 조회 가능
     - POST: 관리자만 등록 가능
     """
-    queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["menu", "category"]
@@ -88,16 +91,37 @@ class ProductListCreateView(generics.ListCreateAPIView):
     ordering_fields = ["name", "price", "created_at"]
     ordering = ["id"]  # 기본 정렬
 
+    def get_queryset(self):
+        """Selector 사용 (N+1 최적화)"""
+        menu_id = self.request.query_params.get('menu')
+        category_id = self.request.query_params.get('category')
+        return ProductSelector.get_product_list(
+            menu_id=menu_id,
+            category_id=category_id
+        )
 
-class ProductRetrieveView(generics.RetrieveAPIView):
+
+class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    상품 상세 조회 (공개) - 확장 정보 포함
+    상품 상세 조회/수정/삭제
     - GET: 누구나 조회 가능
+    - PATCH/DELETE: 관리자만 가능
     """
-    queryset = Product.objects.all()
     serializer_class = ProductDetailSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrReadOnly]
     lookup_url_kwarg = "product_id"
+
+    def get_object(self):
+        """Selector 사용 (연관 데이터 prefetch)"""
+        return ProductSelector.get_product_detail(
+            product_id=self.kwargs['product_id']
+        )
+
+    def get_serializer_class(self):
+        """PATCH는 ProductSerializer, 나머지는 ProductDetailSerializer"""
+        if self.request.method in ["PATCH", "PUT"]:
+            return ProductSerializer
+        return ProductDetailSerializer
 
 
 class ImageListCreateView(generics.ListCreateAPIView):

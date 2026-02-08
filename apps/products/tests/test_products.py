@@ -180,3 +180,90 @@ def test_상품_목록은_가격_내림차순으로_조회할_수_있다(get_pro
     assert len(results) >= 2
     assert results[0]["name"] == "양념치킨"  # 19000원
     assert results[1]["name"] == "후라이드치킨"  # 18000원
+
+def test_관리자_관리자는_상품을_수정할_수_있다(admin_client, sample_products):
+    """
+    Given: 관리자 권한이 있고, 상품이 존재할 때
+    When: 상품 정보를 수정하면
+    Then: 상품이 수정된다
+    """
+    from apps.conftest import API_PRODUCT_DETAIL
+
+    # Given
+    product = sample_products[0]
+    url = API_PRODUCT_DETAIL.format(product_id=product.id)
+    payload = {
+        "name": "수정된 치킨",
+        "price": 20000,
+        "description": "수정된 설명"
+    }
+
+    # When
+    response = admin_client.patch(url, payload)
+
+    # Then
+    assert response.status_code == 200
+    assert response.data["name"] == "수정된 치킨"
+    assert response.data["price"] == 20000
+    assert response.data["description"] == "수정된 설명"
+
+
+def test_권한_일반_사용자는_상품을_수정할_수_없다(user_client, sample_products):
+    """
+    Given: 일반 사용자 권한이고, 상품이 존재할 때
+    When: 상품 정보를 수정하려고 하면
+    Then: 권한 오류가 발생한다
+    """
+    from apps.conftest import API_PRODUCT_DETAIL
+
+    # Given
+    product = sample_products[0]
+    url = API_PRODUCT_DETAIL.format(product_id=product.id)
+    payload = {
+        "name": "수정된 치킨",
+        "price": 20000
+    }
+
+    # When
+    response = user_client.patch(url, payload)
+
+    # Then
+    assert response.status_code == 403
+
+
+def test_관리자_관리자는_상품을_삭제할_수_있다(admin_client, sample_products):
+    """
+    Given: 관리자 권한이 있고, 상품이 존재할 때
+    When: 상품을 삭제하면
+    Then: 상품이 삭제된다
+    """
+    from apps.conftest import API_PRODUCT_DETAIL
+
+    # Given
+    product = sample_products[0]
+    url = API_PRODUCT_DETAIL.format(product_id=product.id)
+
+    # When
+    response = admin_client.delete(url)
+
+    # Then
+    assert response.status_code == 204
+
+
+def test_권한_일반_사용자는_상품을_삭제할_수_없다(user_client, sample_products):
+    """
+    Given: 일반 사용자 권한이고, 상품이 존재할 때
+    When: 상품을 삭제하려고 하면
+    Then: 권한 오류가 발생한다
+    """
+    from apps.conftest import API_PRODUCT_DETAIL
+
+    # Given
+    product = sample_products[0]
+    url = API_PRODUCT_DETAIL.format(product_id=product.id)
+
+    # When
+    response = user_client.delete(url)
+
+    # Then
+    assert response.status_code == 403

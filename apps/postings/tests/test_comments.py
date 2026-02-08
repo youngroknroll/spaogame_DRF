@@ -3,6 +3,42 @@
 """
 
 
+def test_사용자는_특정_후기의_댓글_목록을_조회할_수_있다(
+    create_posting, create_comment, api_client, sample_product
+):
+    """
+    Given: 후기에 여러 개의 댓글이 있을 때
+    When: 댓글 목록을 조회하면
+    Then: 모든 댓글이 조회된다
+    """
+    from apps.conftest import API_COMMENTS
+
+    # Given - 후기 작성
+    posting_response = create_posting(sample_product.id, {
+        "title": "맛있어요!",
+        "content": "정말 맛있게 잘 먹었습니다.",
+        "rating": 5
+    })
+    posting_id = posting_response.data["id"]
+
+    # 댓글 3개 작성
+    create_comment(posting_id, {"content": "첫 번째 댓글"})
+    create_comment(posting_id, {"content": "두 번째 댓글"})
+    create_comment(posting_id, {"content": "세 번째 댓글"})
+
+    # When - 댓글 목록 조회
+    url = API_COMMENTS.format(posting_id=posting_id)
+    response = api_client.get(url)
+
+    # Then
+    assert response.status_code == 200
+    assert response.data["count"] == 3
+    assert len(response.data["results"]) == 3
+    assert response.data["results"][0]["content"] == "첫 번째 댓글"
+    assert response.data["results"][1]["content"] == "두 번째 댓글"
+    assert response.data["results"][2]["content"] == "세 번째 댓글"
+
+
 def test_인증_로그인한_사용자는_후기에_댓글을_작성할_수_있다(
     create_posting, create_comment, sample_product
 ):

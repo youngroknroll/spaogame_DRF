@@ -6,7 +6,7 @@ from .views import (
     PostingListView,
     PostingDetailView,
     PostingCreateView,
-    CommentCreateView,
+    CommentListCreateView,
     CommentDeleteView,
 )
 
@@ -16,6 +16,6 @@ urlpatterns = [
     path("<int:posting_id>/", PostingDetailView.as_view(), name="posting-detail"),
 
     # 댓글
-    path("<int:posting_id>/comments/", CommentCreateView.as_view(), name="comment-create"),
+    path("<int:posting_id>/comments/", CommentListCreateView.as_view(), name="comment-list-create"),
     path("<int:posting_id>/comments/<int:comment_id>/", CommentDeleteView.as_view(), name="comment-delete"),
 ]

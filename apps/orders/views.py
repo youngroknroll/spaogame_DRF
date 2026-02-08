@@ -1,7 +1,6 @@
 """
 Orders 앱 뷰 (CBV 방식)
 """
-from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -17,7 +16,7 @@ from .serializers import (
     WishlistItemSerializer,
     WishlistAddSerializer,
 )
-from apps.products.models import Product, DetailedProduct
+from .services import CartService, WishlistService
 
 
 class CartView(APIView):
@@ -31,47 +30,24 @@ class CartView(APIView):
     def get(self, request):
         """장바구니 조회"""
         cart = Cart.objects.filter(user=request.user).first()
-        
+
         if not cart:
             return Response({"id": None, "items": [], "created_at": None, "updated_at": None})
-        
+
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
     def post(self, request):
-        """장바구니에 상품 또는 상세상품 추가"""
+        """장바구니에 상품 추가"""
         serializer = CartAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        product_id = serializer.validated_data.get('product_id')
-        detailed_product_id = serializer.validated_data.get('detailed_product_id')
-        quantity = serializer.validated_data['quantity']
-        
-        cart, _ = Cart.objects.get_or_create(user=request.user)
-        
-        if detailed_product_id:
-            # 상세 상품 기반 추가
-            detailed_product = get_object_or_404(DetailedProduct, id=detailed_product_id)
-            
-            cart_item, created = CartItem.objects.get_or_create(
-                cart=cart,
-                detailed_product=detailed_product,
-                defaults={'quantity': quantity}
-            )
-        else:
-            # 기존 상품 기반 추가
-            product = get_object_or_404(Product, id=product_id)
-            
-            cart_item, created = CartItem.objects.get_or_create(
-                cart=cart,
-                product=product,
-                defaults={'quantity': quantity}
-            )
-        
-        if not created:
-            cart_item.quantity += quantity
-            cart_item.save()
-        
+
+        # Service에 위임
+        cart_item = CartService.add_item(
+            user=request.user,
+            **serializer.validated_data
+        )
+
         response_serializer = CartItemSerializer(cart_item)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -92,20 +68,26 @@ class CartItemDetailView(generics.UpdateAPIView, generics.DestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         """수량 변경 (PATCH)"""
-        cart_item = self.get_object()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        cart_item.quantity = serializer.validated_data['quantity']
-        cart_item.save()
-        
+
+        # Service에 위임
+        cart_item = CartService.update_item_quantity(
+            user=request.user,
+            item_id=kwargs['item_id'],
+            quantity=serializer.validated_data['quantity']
+        )
+
         response_serializer = CartItemSerializer(cart_item)
         return Response(response_serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         """항목 제거 (DELETE)"""
-        cart_item = self.get_object()
-        cart_item.delete()
+        # Service에 위임
+        CartService.remove_item(
+            user=request.user,
+            item_id=kwargs['item_id']
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -132,13 +114,10 @@ class WishlistView(APIView):
         serializer = WishlistAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        product_id = serializer.validated_data["product_id"]
-        product = get_object_or_404(Product, id=product_id)
-
-        wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
-        wishlist_item, created = WishlistItem.objects.get_or_create(
-            wishlist=wishlist,
-            product=product
+        # Service에 위임
+        wishlist_item, created = WishlistService.add_item(
+            user=request.user,
+            product_id=serializer.validated_data["product_id"]
         )
 
         response_serializer = WishlistItemSerializer(wishlist_item)
@@ -157,3 +136,12 @@ class WishlistItemDetailView(generics.DestroyAPIView):
     def get_queryset(self):
         """현재 사용자의 위시리스트 항목만 조회"""
         return WishlistItem.objects.filter(wishlist__user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        """항목 제거 (DELETE)"""
+        # Service에 위임
+        WishlistService.remove_item(
+            user=request.user,
+            item_id=kwargs['item_id']
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
