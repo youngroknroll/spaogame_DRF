@@ -1,5 +1,10 @@
 # Spaogame API
 
+![CI](https://github.com/youngroknroll/spaogame_DRF/workflows/CI/badge.svg)
+[![Python](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![Django](https://img.shields.io/badge/django-6.0.1-green.svg)](https://www.djangoproject.com/)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
 Django REST Framework 기반의 전자상거래 플랫폼 API 서버
 
 ## 📋 목차
@@ -7,11 +12,13 @@ Django REST Framework 기반의 전자상거래 플랫폼 API 서버
 - [개요](#개요)
 - [기술 스택](#기술-스택)
 - [프로젝트 구조](#프로젝트-구조)
+- [빠른 시작 (Docker)](#빠른-시작-docker)
 - [설치 및 실행](#설치-및-실행)
 - [데이터베이스 구조](#데이터베이스-구조)
 - [주요 기능](#주요-기능)
 - [API 문서](#api-문서)
 - [개발 가이드](#개발-가이드)
+- [CI/CD](#cicd)
 
 ## 개요
 
@@ -33,11 +40,17 @@ Django REST Framework 기반의 전자상거래 플랫폼 API 서버
 | **인증** | SimpleJWT 5.5.1 |
 | **문서화** | drf-spectacular 0.29.0 |
 | **필터링** | django-filter 25.2 |
-| **데이터베이스** | SQLite (개발), PostgreSQL 권장 (프로덕션) |
+| **데이터베이스** | PostgreSQL 17 (운영), SQLite (개발) |
+| **캐시/메시지** | Redis 7 |
 | **비밀번호 해싱** | Argon2 |
-| **환경 설정** | python-dotenv 1.2.1 |
-| **테스팅** | pytest 9.0.2, pytest-django 4.11.1 |
+| **환경 설정** | python-dotenv 1.2.1, dj-database-url 3.1.0 |
+| **테스팅** | pytest 9.0.2, pytest-django 4.11.1, pytest-cov 7.0.0 |
+| **코드 품질** | Ruff 0.15.0, pre-commit 4.5.1 |
+| **컨테이너** | Docker, Docker Compose |
+| **CI/CD** | GitHub Actions |
+| **WSGI 서버** | Gunicorn 25.0.3 (운영) |
 | **Python** | 3.13+ |
+| **패키지 관리** | UV (Astral) |
 
 ## 프로젝트 구조
 
@@ -77,56 +90,123 @@ spaogame-api/
 ├── conftest.py                   # pytest 글로벌 설정
 ├── pytest.ini                    # pytest 설정
 ├── pyproject.toml                # 프로젝트 메타데이터 및 의존성
+├── uv.lock                       # UV 의존성 잠금 파일
 ├── manage.py                     # Django 관리 스크립트
 ├── main.py                       # 진입점
+├── Dockerfile                    # Docker 이미지 빌드 설정
+├── docker-compose.yml            # Docker Compose 설정
+├── docker-entrypoint.sh          # 컨테이너 시작 스크립트
+├── .dockerignore                 # Docker 빌드 제외 파일
+├── Makefile                      # 개발 명령어 단축키
+├── .pre-commit-config.yaml       # Pre-commit 훅 설정
+├── .env.example                  # 환경 변수 템플릿
+├── .github/
+│   └── workflows/
+│       └── ci.yml                # GitHub Actions CI 워크플로우
 └── README.md                     # 이 파일
 ```
+
+## 빠른 시작 (Docker)
+
+Docker를 사용하면 개발 환경을 빠르게 구축할 수 있습니다.
+
+### 필수 요구사항
+- Docker Desktop
+- Git
+
+### 실행 방법
+
+1. **저장소 클론**
+```bash
+git clone https://github.com/youngroknroll/spaogame_DRF.git
+cd spaogame-api
+```
+
+2. **Docker Compose로 실행**
+```bash
+docker compose up --build
+```
+
+3. **서비스 접속**
+- API 서버: http://localhost:8000
+- PostgreSQL: localhost:5432
+- Redis: localhost:6379
+
+4. **테스트 실행 (컨테이너 내부)**
+```bash
+docker compose exec web uv run pytest -v
+```
+
+5. **종료**
+```bash
+docker compose down
+```
+
+**포함된 서비스:**
+- `web`: Django API 서버 (port 8000)
+- `db`: PostgreSQL 17 (port 5432)
+- `redis`: Redis 7 (port 6379)
+
+**자동 실행 기능:**
+- 데이터베이스 연결 대기 (최대 30초)
+- 마이그레이션 자동 실행
+- 개발 서버 자동 시작
 
 ## 설치 및 실행
 
 ### 필수 요구사항
 
 - Python 3.13+
-- uv (Python 패키지 매니저)
+- UV (Python 패키지 매니저)
 - Git
 
 ### 설치 단계
 
 1. **저장소 클론**
 ```bash
-git clone https://github.com/your-username/spaogame-api.git
+git clone https://github.com/youngroknroll/spaogame_DRF.git
 cd spaogame-api
 ```
 
-2. **환경 변수 설정**
+2. **UV 설치** (없는 경우)
 ```bash
-# .env 파일 생성
-cp .env.example .env
-
-# .env 파일 수정
-DJANGO_SECRET_KEY=your-secret-key-here
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-3. **의존성 설치**
+3. **환경 변수 설정**
+```bash
+# .env.example을 복사하여 .env 파일 생성
+cp .env.example .env
+
+# SECRET_KEY 생성
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+# .env 파일을 열어 생성된 SECRET_KEY를 입력
+# DJANGO_SECRET_KEY=<생성된-키-붙여넣기>
+# DEBUG=True
+# ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+4. **의존성 설치**
 ```bash
 uv sync
 ```
 
-4. **데이터베이스 마이그레이션**
+5. **데이터베이스 마이그레이션**
 ```bash
 uv run python manage.py migrate
+# 또는: make migrate
 ```
 
-5. **슈퍼유저 생성** (관리자 계정)
+6. **슈퍼유저 생성** (관리자 계정)
 ```bash
 uv run python manage.py createsuperuser
 ```
 
-6. **개발 서버 실행**
+7. **개발 서버 실행**
 ```bash
 uv run python manage.py runserver
+# 또는: make shell
 ```
 
 서버는 `http://localhost:8000`에서 실행됩니다.
@@ -375,17 +455,79 @@ curl -X PATCH http://localhost:8000/api/postings/1/ \
 
 ## 개발 가이드
 
+### Makefile 명령어
+
+프로젝트는 자주 사용하는 명령어를 단축키로 제공합니다.
+
+```bash
+make help          # 사용 가능한 명령어 목록
+make install       # 의존성 설치
+make test          # 테스트 실행
+make lint          # 린팅 검사
+make format        # 코드 포맷
+make clean         # 캐시 파일 정리
+make docker-up     # Docker 서비스 시작
+make docker-down   # Docker 서비스 종료
+make migrate       # 마이그레이션 실행
+make shell         # Django shell 시작
+```
+
+### 코드 품질 관리
+
+#### Ruff (린터 & 포매터)
+
+```bash
+# 코드 린팅
+make lint
+# 또는: uv run ruff check .
+
+# 코드 포맷
+make format
+# 또는: uv run ruff format .
+
+# 자동 수정
+uv run ruff check --fix .
+```
+
+**Ruff 설정:**
+- Line length: 100
+- Target: Python 3.13
+- Rules: pycodestyle, pyflakes, isort, flake8-bugbear, comprehensions, pyupgrade
+
+#### Pre-commit 훅
+
+Git commit 전에 자동으로 린팅 및 포맷을 실행합니다.
+
+```bash
+# Pre-commit 훅 설치
+uv run pre-commit install
+
+# 모든 파일에 대해 수동 실행
+uv run pre-commit run --all-files
+```
+
+**Pre-commit 검사 항목:**
+- Trailing whitespace 제거
+- EOF 수정
+- YAML/JSON/TOML 검증
+- Private key 감지
+- Ruff 린팅 및 포맷
+
 ### 테스트 실행
 
 **테스트 통계:**
-- 총 테스트: 69개
+- 총 테스트: 74개
 - 테스트 프레임워크: pytest + pytest-django
-- 테스트 커버리지: 주요 기능 100%
+- 테스트 커버리지: apps/ 디렉토리 전체
 - 테스트 명명: 한글 함수명 (Given-When-Then 패턴)
 
 ```bash
 # 모든 테스트 실행
-uv run pytest
+make test
+# 또는: uv run pytest
+
+# 상세 출력과 함께 실행
+uv run pytest -v
 
 # 특정 앱의 테스트만 실행
 uv run pytest apps/users/tests/
@@ -393,18 +535,24 @@ uv run pytest apps/users/tests/
 # 특정 테스트 파일 실행
 uv run pytest apps/postings/tests/test_postings_crud.py
 
-# 상세 출력과 함께 실행
-uv run pytest -v
+# 커버리지 리포트 생성 (자동)
+uv run pytest  # coverage.xml과 터미널 리포트 자동 생성
 
-# 커버리지 리포트 생성
+# HTML 커버리지 리포트
 uv run pytest --cov=apps --cov-report=html
+open htmlcov/index.html
 ```
 
 **테스트 구성:**
-- `apps/users/tests/`: 회원가입, 로그인, 프로필 테스트 (12개)
-- `apps/products/tests/`: 상품, 카테고리, 색상/사이즈 테스트 (21개)
-- `apps/orders/tests/`: 장바구니, 위시리스트 테스트 (19개)
-- `apps/postings/tests/`: 후기, 댓글 테스트 (17개)
+- `apps/users/tests/`: 회원가입, 로그인, 프로필 테스트
+- `apps/products/tests/`: 상품, 카테고리, 색상/사이즈 테스트
+- `apps/orders/tests/`: 장바구니, 위시리스트 테스트
+- `apps/postings/tests/`: 후기, 댓글 테스트
+
+**Docker에서 테스트 실행:**
+```bash
+docker compose exec web uv run pytest -v
+```
 
 ### 마이그레이션 관리
 
@@ -507,56 +655,163 @@ def test_권한_후기_작성자가_아닌_사용자는_후기를_수정할_수_
 - DB 제약으로 데이터 무결성 보장
 - 권한 클래스로 접근 제어 분리
 
-### 주요 설정 (환경 변수)
+### 환경 변수 설정
 
-| 환경 변수 | 기본값 | 설명 |
-|---------|------|------|
-| `DEBUG` | `True` | 디버그 모드 (프로덕션에서는 `False`로 설정) |
-| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | 허용된 호스트 (쉼표로 구분) |
-| `DJANGO_SECRET_KEY` | 필수 | Django 시크릿 키 |
-| `DATABASE_URL` | SQLite | 데이터베이스 연결 URL |
+| 환경 변수 | 기본값 | 설명 | 예시 |
+|---------|------|------|------|
+| `DJANGO_SECRET_KEY` | **필수** | Django 시크릿 키 | `your-secret-key-here` |
+| `DEBUG` | `False` | 디버그 모드 (개발: True, 운영: False) | `True` |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | 허용된 호스트 (쉼표로 구분) | `example.com,www.example.com` |
+| `DATABASE_URL` | `sqlite:///db.sqlite3` | 데이터베이스 연결 URL | `postgresql://user:pass@db:5432/spaogame` |
+| `REDIS_URL` | - | Redis 연결 URL (선택) | `redis://redis:6379/0` |
+
+**SECRET_KEY 생성 방법:**
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+**DATABASE_URL 형식:**
+```bash
+# SQLite (개발)
+DATABASE_URL=sqlite:///db.sqlite3
+
+# PostgreSQL (운영)
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# Docker Compose
+DATABASE_URL=postgresql://spaogame:spaogame_password@db:5432/spaogame
+```
+
+**`.env` 파일 예시:**
+```bash
+DJANGO_SECRET_KEY=django-insecure-your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=sqlite:///db.sqlite3
+```
+
+## CI/CD
+
+### GitHub Actions
+
+프로젝트는 GitHub Actions를 통해 자동화된 테스트 및 코드 품질 검사를 수행합니다.
+
+**워크플로우:** `.github/workflows/ci.yml`
+
+**실행 조건:**
+- `main` 브랜치에 push
+- `main` 브랜치로의 Pull Request
+
+**검사 항목:**
+1. **Ruff 린팅**: 코드 스타일 및 품질 검사
+2. **Ruff 포맷 검사**: 코드 포맷 일관성 확인
+3. **테스트 실행**: PostgreSQL 환경에서 74개 테스트 실행
+4. **커버리지 리포트**: Codecov 업로드 (선택)
+
+**테스트 환경:**
+- Python 3.13
+- PostgreSQL 17
+- UV 패키지 매니저
+
+**로컬에서 CI 시뮬레이션:**
+```bash
+# 린팅 검사
+make lint
+
+# 포맷 검사
+uv run ruff format --check .
+
+# 테스트 실행
+make test
+```
+
+**Badge 상태 확인:**
+- CI Status: ![CI](https://github.com/youngroknroll/spaogame_DRF/workflows/CI/badge.svg)
 
 ## 보안 고려사항
 
 ### 구현된 보안 조치
-- ✅ 환경 변수 기반 설정 (DEBUG, ALLOWED_HOSTS)
+- ✅ 환경 변수 기반 설정 (SECRET_KEY, DEBUG, DATABASE_URL)
+- ✅ SECRET_KEY 필수값 검증 (누락 시 명확한 에러)
+- ✅ DEBUG 기본값 False (운영 환경 안전)
 - ✅ Argon2 기반 비밀번호 해싱
 - ✅ JWT 토큰 기반 인증
 - ✅ 데이터베이스 제약을 통한 무결성 보장
 - ✅ 입력 데이터 검증 (시리얼라이저, 모델)
+- ✅ Pre-commit 훅으로 private key 감지
 
 ### 권장 프로덕션 설정
-- `DEBUG = False` 설정
-- `ALLOWED_HOSTS`에 실제 도메인 지정
-- HTTPS 강제
-- CSRF 보호 활성화
-- CORS 정책 설정
-- 데이터베이스를 PostgreSQL로 변경
-- 환경 변수 파일 `.env`를 VCS에서 제외
+- ✅ `DEBUG = False` 기본값 적용
+- ✅ `ALLOWED_HOSTS`에 실제 도메인 지정
+- ✅ 환경 변수로 SECRET_KEY 관리
+- ✅ PostgreSQL 사용 (Docker Compose 지원)
+- ⚠️ HTTPS 강제 (배포 환경에서 설정 필요)
+- ⚠️ CSRF 보호 활성화
+- ⚠️ CORS 정책 설정
+- ✅ `.env` 파일 VCS 제외 (.gitignore)
 
-## 최근 업데이트 (v0.2.0)
+## 최근 업데이트
 
-### 새로운 기능 (v0.2.0)
-- **프로필 관리 API**: 사용자 프로필 조회 및 수정 기능 추가
-  - `GET /api/users/profile/` - 로그인한 사용자 프로필 조회
-  - `PATCH /api/users/profile/` - 프로필 수정 (이메일, 가입일 read-only)
-  - 전화번호, 성별 등 필드 검증 로직 포함
-- **후기 CRUD API**: 상품 후기 목록 조회 및 관리 기능 추가
-  - `GET /api/postings/` - 후기 목록 조회 (공개)
-  - `GET /api/postings/{posting_id}/` - 후기 상세 조회 (공개)
-  - `PATCH /api/postings/{posting_id}/` - 후기 수정 (소유자만)
-  - `DELETE /api/postings/{posting_id}/` - 후기 삭제 (소유자만)
-  - `IsPostingOwner` 권한 클래스로 소유자 검증
-- **테스트 확장**: 총 69개 테스트로 확장 (프로필 5개, 후기 CRUD 7개 추가)
-- **README 개선**: API 사용 예시, TDD 방법론, 권한 체계 문서화
+### v0.3.0 - 배포 인프라 구축 (2026-02-10)
 
-### 이전 버그 수정 및 개선사항 (v0.1.0)
-- **CartItem 검증 강화**: product/detailed_product 중 정확히 하나만 설정되도록 DB 제약 추가
-- **중복 행 방지**: CartItem에 조건부 UniqueConstraint 추가로 race condition 방지
-- **Product 무결성**: category가 menu에 속하는지 모델 검증 및 DB 제약 추가
-- **환경 변수화**: DEBUG와 ALLOWED_HOSTS를 환경 변수로 관리하여 배포 시 보안 강화
-- **CBV 통일**: 전체 앱을 Class-Based Views 스타일로 통일
-- **위시리스트 기능**: 사용자별 위시리스트 관리 기능 추가
+**Phase 1: 환경 설정 개선**
+- ✅ `.env.example` 템플릿 제공
+- ✅ SECRET_KEY 필수값 검증 (누락 시 명확한 에러 메시지)
+- ✅ DEBUG 기본값 False로 변경 (운영 환경 보안 강화)
+- ✅ DATABASE_URL 환경변수 지원 (dj-database-url)
+- ✅ PostgreSQL 지원 추가 (psycopg[binary] 3.3.2)
+- ✅ Gunicorn WSGI 서버 추가
+
+**Phase 2: Docker 환경 구축**
+- ✅ Multi-stage Dockerfile (Python 3.13, UV)
+- ✅ docker-compose.yml (Django + PostgreSQL 17 + Redis 7)
+- ✅ 마이그레이션 자동화 (docker-entrypoint.sh)
+- ✅ Health check 설정
+- ✅ Volume 마운트로 개발 편의성 향상
+- ✅ Docker 환경에서 74/74 테스트 통과
+
+**Phase 3: CI/CD**
+- ✅ GitHub Actions 워크플로우 (.github/workflows/ci.yml)
+- ✅ PostgreSQL 17 서비스 컨테이너
+- ✅ Ruff 린팅 및 포맷 검사 자동화
+- ✅ pytest 자동 실행 및 커버리지 리포트
+- ✅ main 브랜치 push/PR 시 자동 실행
+
+**Phase 4: 린팅/포맷팅**
+- ✅ Ruff 0.15.0 통합 (린터 + 포매터)
+- ✅ pyproject.toml 설정 (line-length 100, Python 3.13)
+- ✅ Pre-commit 훅 설정 (.pre-commit-config.yaml)
+- ✅ Makefile 추가 (자주 사용하는 명령어 단축)
+- ✅ 전체 코드베이스 Ruff 포맷 적용 (63개 파일)
+- ✅ pytest-cov 통합 (coverage.xml 자동 생성)
+
+**개발 도구:**
+- `make test` - 테스트 실행
+- `make lint` - 린팅 검사
+- `make format` - 코드 포맷
+- `make docker-up` - Docker 서비스 시작
+- `make docker-down` - Docker 서비스 종료
+
+**검증:**
+- ✅ 로컬 테스트: 74/74 통과
+- ✅ Docker 테스트: 74/74 통과
+- ✅ Ruff 린트: All checks passed
+- ✅ Pre-commit 훅: 설치 및 동작 확인
+
+### v0.2.0 - 기능 확장 (2026-01)
+
+- **프로필 관리 API**: 사용자 프로필 조회 및 수정 기능
+- **후기 CRUD API**: 상품 후기 목록 조회 및 관리
+- **테스트 확장**: 총 74개 테스트 (프로필, 후기 CRUD 포함)
+- **README 개선**: API 사용 예시, TDD 방법론 문서화
+
+### v0.1.0 - 초기 릴리스 (2025-12)
+
+- **CartItem 검증 강화**: DB 제약으로 데이터 무결성 보장
+- **Product 무결성**: category-menu 관계 검증
+- **환경 변수화**: DEBUG, ALLOWED_HOSTS 환경 변수 관리
+- **CBV 통일**: Class-Based Views 스타일
+- **위시리스트 기능**: 사용자별 위시리스트 관리
 
 ## 라이센스
 
