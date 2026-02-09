@@ -1,10 +1,7 @@
 from django.db import models
-from django.db.models import Avg, Count
-from django.core.cache import cache
-from django.conf import settings
+from django.db.models import Avg
 
 from apps.core.models import TimeStampedModel
-from apps.core.cache_utils import get_cache_key
 
 
 class Menu(TimeStampedModel):
@@ -114,24 +111,14 @@ class Product(TimeStampedModel):
     
     @property
     def posting_count(self):
-        """후기 개수 (캐시 적용)"""
-        cache_key = get_cache_key('product_posting_count', self.id)
-        count = cache.get(cache_key)
-        if count is None:
-            count = self.postings.count()
-            cache.set(cache_key, count, settings.CACHE_TTL["RATING"])
-        return count
+        """후기 개수"""
+        return self.postings.count()
 
     @property
     def average_rating(self):
-        """평균 평점 (캐시 적용)"""
-        cache_key = get_cache_key('product_rating', self.id)
-        rating = cache.get(cache_key)
-        if rating is None:
-            result = self.postings.aggregate(avg=Avg("rating"))
-            rating = round(result["avg"], 1) if result["avg"] else None
-            cache.set(cache_key, rating, settings.CACHE_TTL["RATING"])
-        return rating
+        """평균 평점"""
+        result = self.postings.aggregate(avg=Avg("rating"))
+        return round(result["avg"], 1) if result["avg"] else None
     
     def get_available_colors(self):
         """해당 상품의 사용 가능한 색상들"""
