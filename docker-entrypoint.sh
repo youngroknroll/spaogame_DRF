@@ -2,7 +2,7 @@
 set -e
 
 echo "Waiting for database..."
-python << END
+uv run python << END
 import sys
 import time
 import psycopg
@@ -33,18 +33,18 @@ echo "Database is ready!"
 
 # 마이그레이션 실행
 echo "Running migrations..."
-python manage.py migrate --noinput
+uv run python manage.py migrate --noinput
 
 # Static 파일 수집 (운영 환경)
 if [ "$DEBUG" = "False" ]; then
     echo "Collecting static files..."
-    python manage.py collectstatic --noinput
+    uv run python manage.py collectstatic --noinput
 fi
 
 # 슈퍼유저 생성 (개발 환경, 환경변수로 제어)
 if [ "$CREATE_SUPERUSER" = "True" ]; then
     echo "Creating superuser..."
-    python manage.py shell << END
+    uv run python manage.py shell << END
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(email='admin@spaogame.com').exists():

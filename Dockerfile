@@ -16,6 +16,9 @@ RUN uv sync --frozen --no-dev
 # Stage 2: Runtime
 FROM python:3.13-slim
 
+# UV 설치
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 # 시스템 패키지 설치 (PostgreSQL 클라이언트)
 RUN apt-get update && apt-get install -y \
     libpq5 \
