@@ -14,10 +14,10 @@ def test_사용자는_올바른_이메일과_비밀번호로_로그인할_수_�
         "email": registered_user["email"],
         "password": registered_user["password"],
     }
-    
+
     # When
     response = login(credentials)
-    
+
     # Then
     assert response.status_code == 200
 
@@ -33,10 +33,10 @@ def test_로그인에_성공하면_인증_토큰을_발급받는다(login, regis
         "email": registered_user["email"],
         "password": registered_user["password"],
     }
-    
+
     # When
     response = login(credentials)
-    
+
     # Then
     assert response.status_code == 200
     assert "access" in response.data
@@ -56,10 +56,10 @@ def test_비밀번호가_틀리면_로그인할_수_없다(login, registered_use
         "email": registered_user["email"],
         "password": "WrongPassword123!",
     }
-    
+
     # When
     response = login(credentials)
-    
+
     # Then
     assert response.status_code == 401
 
@@ -75,9 +75,9 @@ def test_존재하지_않는_이메일로는_로그인할_수_없다(login):
         "email": "notexist@example.com",
         "password": "SomePassword123!",
     }
-    
+
     # When
     response = login(credentials)
-    
+
     # Then
     assert response.status_code == 401

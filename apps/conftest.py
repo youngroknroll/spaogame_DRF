@@ -1,9 +1,10 @@
 """
 전체 프로젝트 공통 테스트 설정
 """
+
 import pytest
-from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 User = get_user_model()
 
@@ -49,6 +50,7 @@ TEST_USER_NAME = "테스트유저"
 
 # ---- 클라이언트 ----
 
+
 @pytest.fixture
 def api_client():
     """API 클라이언트"""
@@ -70,10 +72,13 @@ def admin_user(db):
 @pytest.fixture
 def admin_token(api_client, admin_user):
     """관리자 인증 토큰"""
-    response = api_client.post(API_USERS_LOGIN, {
-        "email": ADMIN_EMAIL,
-        "password": ADMIN_PASSWORD,
-    })
+    response = api_client.post(
+        API_USERS_LOGIN,
+        {
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD,
+        },
+    )
     return response.data["access"]
 
 
@@ -97,10 +102,13 @@ def regular_user(db):
 @pytest.fixture
 def regular_user_token(api_client, regular_user):
     """일반 사용자 인증 토큰"""
-    response = api_client.post(API_USERS_LOGIN, {
-        "email": TEST_USER_EMAIL,
-        "password": TEST_USER_PASSWORD,
-    })
+    response = api_client.post(
+        API_USERS_LOGIN,
+        {
+            "email": TEST_USER_EMAIL,
+            "password": TEST_USER_PASSWORD,
+        },
+    )
     return response.data["access"]
 
 
@@ -114,10 +122,12 @@ def user_client(api_client, regular_user_token):
 
 # ---- 공통 도메인 데이터 ----
 
+
 @pytest.fixture
 def sample_menu(db):
     """테스트용 메뉴 (공통)"""
     from apps.products.models import Menu
+
     return Menu.objects.create(name="치킨")
 
 
@@ -125,6 +135,7 @@ def sample_menu(db):
 def sample_category(db, sample_menu):
     """테스트용 카테고리 (공통)"""
     from apps.products.models import Category
+
     return Category.objects.create(menu=sample_menu, name="후라이드")
 
 
@@ -132,12 +143,13 @@ def sample_category(db, sample_menu):
 def sample_product(db, sample_menu, sample_category):
     """테스트용 상품 (공통)"""
     from apps.products.models import Product
+
     return Product.objects.create(
         menu=sample_menu,
         category=sample_category,
         name="후라이드치킨",
         price=18000,
-        description="바삭한 후라이드치킨"
+        description="바삭한 후라이드치킨",
     )
 
 

@@ -1,10 +1,11 @@
 """
 후기 CRUD 테스트 (목록, 상세, 수정, 삭제)
 """
+
 import pytest
 from rest_framework import status
-from apps.postings.models import Posting
 
+from apps.postings.models import Posting
 
 # API URLs
 API_POSTINGS_LIST_ALL = "/api/postings/"
@@ -19,7 +20,7 @@ def sample_posting(db, regular_user, sample_product):
         product=sample_product,
         title="테스트 후기",
         content="테스트 내용입니다.",
-        rating=4
+        rating=4,
     )
 
 
@@ -27,12 +28,11 @@ def sample_posting(db, regular_user, sample_product):
 def another_user_posting(db, sample_product):
     """다른 사용자의 후기"""
     from django.contrib.auth import get_user_model
+
     User = get_user_model()
 
     other_user = User.objects.create_user(
-        email="other@example.com",
-        password="OtherPass123!",
-        name="다른사용자"
+        email="other@example.com", password="OtherPass123!", name="다른사용자"
     )
 
     return Posting.objects.create(
@@ -40,7 +40,7 @@ def another_user_posting(db, sample_product):
         product=sample_product,
         title="다른 사용자 후기",
         content="다른 사용자 내용입니다.",
-        rating=3
+        rating=3,
     )
 
 
@@ -95,11 +95,7 @@ def test_인증_후기_작성자는_자신의_후기를_수정할_수_있다(use
     Then: 후기가 수정된다
     """
     url = API_POSTING_DETAIL.format(posting_id=sample_posting.id)
-    update_data = {
-        "title": "수정된 제목",
-        "content": "수정된 내용",
-        "rating": 5
-    }
+    update_data = {"title": "수정된 제목", "content": "수정된 내용", "rating": 5}
 
     response = user_client.patch(url, update_data)
 
@@ -117,11 +113,7 @@ def test_권한_후기_작성자가_아닌_사용자는_후기를_수정할_수_
     Then: 권한 오류가 발생한다
     """
     url = API_POSTING_DETAIL.format(posting_id=another_user_posting.id)
-    update_data = {
-        "title": "수정 시도",
-        "content": "수정 시도",
-        "rating": 1
-    }
+    update_data = {"title": "수정 시도", "content": "수정 시도", "rating": 1}
 
     response = user_client.patch(url, update_data)
 

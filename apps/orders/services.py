@@ -4,12 +4,15 @@ Orders 도메인 비즈니스 로직
 Service Layer는 비즈니스 규칙과 트랜잭션 경계를 담당합니다.
 View는 HTTP 처리만, Service는 도메인 로직만 담당합니다.
 """
+
 import logging
+
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
+from apps.products.models import DetailedProduct, Product
+
 from .models import Cart, CartItem, Wishlist, WishlistItem
-from apps.products.models import Product, DetailedProduct
 
 logger = logging.getLogger(__name__)
 
@@ -43,16 +46,12 @@ class CartService:
         if detailed_product_id:
             detailed_product = get_object_or_404(DetailedProduct, id=detailed_product_id)
             cart_item, created = CartItem.objects.get_or_create(
-                cart=cart,
-                detailed_product=detailed_product,
-                defaults={'quantity': quantity}
+                cart=cart, detailed_product=detailed_product, defaults={"quantity": quantity}
             )
         else:
             product = get_object_or_404(Product, id=product_id)
             cart_item, created = CartItem.objects.get_or_create(
-                cart=cart,
-                product=product,
-                defaults={'quantity': quantity}
+                cart=cart, product=product, defaults={"quantity": quantity}
             )
 
         if not created:
@@ -84,11 +83,7 @@ class CartService:
             f"장바구니 수량 변경: user={user.email}, item_id={item_id}, quantity={quantity}"
         )
 
-        cart_item = get_object_or_404(
-            CartItem,
-            id=item_id,
-            cart__user=user
-        )
+        cart_item = get_object_or_404(CartItem, id=item_id, cart__user=user)
         cart_item.quantity = quantity
         cart_item.save()
 
@@ -108,11 +103,7 @@ class CartService:
         """
         logger.info(f"장바구니 항목 삭제: user={user.email}, item_id={item_id}")
 
-        cart_item = get_object_or_404(
-            CartItem,
-            id=item_id,
-            cart__user=user
-        )
+        cart_item = get_object_or_404(CartItem, id=item_id, cart__user=user)
         cart_item.delete()
 
         logger.info(f"장바구니 항목 삭제 완료: item_id={item_id}")
@@ -140,13 +131,10 @@ class WishlistService:
         wishlist, _ = Wishlist.objects.get_or_create(user=user)
 
         wishlist_item, created = WishlistItem.objects.get_or_create(
-            wishlist=wishlist,
-            product=product
+            wishlist=wishlist, product=product
         )
 
-        logger.info(
-            f"위시리스트 추가 완료: wishlist_item_id={wishlist_item.id}, created={created}"
-        )
+        logger.info(f"위시리스트 추가 완료: wishlist_item_id={wishlist_item.id}, created={created}")
 
         return wishlist_item, created
 
@@ -162,11 +150,7 @@ class WishlistService:
         """
         logger.info(f"위시리스트 삭제: user={user.email}, item_id={item_id}")
 
-        wishlist_item = get_object_or_404(
-            WishlistItem,
-            id=item_id,
-            wishlist__user=user
-        )
+        wishlist_item = get_object_or_404(WishlistItem, id=item_id, wishlist__user=user)
         wishlist_item.delete()
 
         logger.info(f"위시리스트 삭제 완료: item_id={item_id}")

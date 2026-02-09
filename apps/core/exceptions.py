@@ -3,16 +3,17 @@
 
 통일된 에러 응답 형식을 제공합니다.
 """
-from rest_framework.views import exception_handler as drf_exception_handler
+
 from rest_framework.exceptions import (
-    ValidationError,
+    AuthenticationFailed,
+    MethodNotAllowed,
+    NotAuthenticated,
     NotFound,
     PermissionDenied,
-    AuthenticationFailed,
-    NotAuthenticated,
-    MethodNotAllowed,
     Throttled,
+    ValidationError,
 )
+from rest_framework.views import exception_handler as drf_exception_handler
 
 
 def custom_exception_handler(exc, context):
@@ -40,11 +41,7 @@ def custom_exception_handler(exc, context):
         # 통일된 응답 형식
         custom_response = {
             "success": False,
-            "error": {
-                "code": error_code,
-                "message": error_message,
-                "details": response.data
-            }
+            "error": {"code": error_code, "message": error_message, "details": response.data},
         }
         response.data = custom_response
 
@@ -54,15 +51,15 @@ def custom_exception_handler(exc, context):
 def _get_error_code(exc):
     """예외 타입별 에러 코드"""
     error_code_map = {
-        ValidationError: 'validation_error',
-        NotFound: 'not_found',
-        PermissionDenied: 'permission_denied',
-        AuthenticationFailed: 'authentication_failed',
-        NotAuthenticated: 'not_authenticated',
-        MethodNotAllowed: 'method_not_allowed',
-        Throttled: 'throttled',
+        ValidationError: "validation_error",
+        NotFound: "not_found",
+        PermissionDenied: "permission_denied",
+        AuthenticationFailed: "authentication_failed",
+        NotAuthenticated: "not_authenticated",
+        MethodNotAllowed: "method_not_allowed",
+        Throttled: "throttled",
     }
-    return error_code_map.get(type(exc), 'unknown_error')
+    return error_code_map.get(type(exc), "unknown_error")
 
 
 def _get_error_message(exc):

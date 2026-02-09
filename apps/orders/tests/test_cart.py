@@ -10,14 +10,11 @@ def test_인증_로그인한_사용자는_상품을_장바구니에_담을_수_�
     Then: 장바구니에 상품이 추가된다
     """
     # Given
-    payload = {
-        "product_id": sample_product.id,
-        "quantity": 2
-    }
-    
+    payload = {"product_id": sample_product.id, "quantity": 2}
+
     # When
     response = add_to_cart(payload)
-    
+
     # Then
     assert response.status_code == 201
     assert response.data["product"]["id"] == sample_product.id
@@ -32,7 +29,7 @@ def test_인증_로그인한_사용자는_자신의_장바구니를_조회할_�
     """
     # When
     response = get_cart()
-    
+
     # Then
     assert response.status_code == 200
     assert "items" in response.data
@@ -46,7 +43,7 @@ def test_인증_장바구니가_비어_있어도_정상적으로_조회된다(ge
     """
     # When
     response = get_cart()
-    
+
     # Then
     assert response.status_code == 200
     assert response.data["items"] == []
@@ -63,10 +60,10 @@ def test_인증_로그인한_사용자는_장바구니_상품의_수량을_변�
     # Given - 상품을 장바구니에 담기
     add_response = add_to_cart({"product_id": sample_product.id, "quantity": 2})
     item_id = add_response.data["id"]
-    
+
     # When - 수량 변경
     response = update_cart_item(item_id, {"quantity": 5})
-    
+
     # Then
     assert response.status_code == 200
     assert response.data["quantity"] == 5
@@ -83,13 +80,13 @@ def test_인증_로그인한_사용자는_장바구니에서_상품을_제거할
     # Given - 상품을 장바구니에 담기
     add_response = add_to_cart({"product_id": sample_product.id, "quantity": 2})
     item_id = add_response.data["id"]
-    
+
     # When - 상품 제거
     response = remove_from_cart(item_id)
-    
+
     # Then
     assert response.status_code == 204
-    
+
     # 장바구니 조회 시 비어있어야 함
     cart_response = get_cart()
     assert cart_response.data["items"] == []
@@ -103,41 +100,43 @@ def test_권한_다른_사용자의_장바구니는_수정하거나_삭제할_�
     When: 다른 사용자가 해당 항목을 수정/삭제하려고 하면
     Then: 404 오류가 발생한다
     """
-    from apps.conftest import (
-        ADMIN_EMAIL, ADMIN_PASSWORD, API_USERS_LOGIN, API_CART_ITEM
-    )
     from django.contrib.auth import get_user_model
-    
+
+    from apps.conftest import ADMIN_EMAIL, ADMIN_PASSWORD, API_CART_ITEM, API_USERS_LOGIN
+
     User = get_user_model()
-    
+
     # Given - 첫 번째 사용자(regular_user)가 장바구니에 상품 추가
     add_response = add_to_cart({"product_id": sample_product.id, "quantity": 2})
     item_id = add_response.data["id"]
-    
+
     # 두 번째 사용자(admin) 로그인
-    admin_user = User.objects.create_user(
+    _admin_user = User.objects.create_user(
         email=ADMIN_EMAIL,
         password=ADMIN_PASSWORD,
         name="관리자",
         is_staff=True,
     )
-    login_response = api_client.post(API_USERS_LOGIN, {
-        "email": ADMIN_EMAIL,
-        "password": ADMIN_PASSWORD,
-    })
+    login_response = api_client.post(
+        API_USERS_LOGIN,
+        {
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD,
+        },
+    )
     admin_token = login_response.data["access"]
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {admin_token}")
-    
+
     # When - 다른 사용자의 장바구니 항목을 수정하려고 시도
     url = API_CART_ITEM.format(item_id=item_id)
     patch_response = api_client.patch(url, {"quantity": 10})
-    
+
     # Then - 404 오류 발생
     assert patch_response.status_code == 404
-    
+
     # When - 다른 사용자의 장바구니 항목을 삭제하려고 시도
     delete_response = api_client.delete(url)
-    
+
     # Then - 404 오류 발생
     assert delete_response.status_code == 404
 
@@ -146,21 +145,21 @@ def test_권한_다른_사용자의_장바구니는_수정하거나_삭제할_�
 # P1: 상세 상품 기반 장바구니 테스트
 # ============================================================
 
-def test_인증_장바구니에_상세상품을_담을_수_있다(add_detailed_to_cart, sample_detailed_product_for_cart):
+
+def test_인증_장바구니에_상세상품을_담을_수_있다(
+    add_detailed_to_cart, sample_detailed_product_for_cart
+):
     """
     Given: 로그인한 사용자와 상세 상품(color/size)이 있을 때
     When: 상세 상품을 장바구니에 담으면
     Then: 장바구니에 상세 상품이 추가된다
     """
     # Given
-    payload = {
-        "detailed_product_id": sample_detailed_product_for_cart.id,
-        "quantity": 2
-    }
-    
+    payload = {"detailed_product_id": sample_detailed_product_for_cart.id, "quantity": 2}
+
     # When
     response = add_detailed_to_cart(payload)
-    
+
     # Then
     assert response.status_code == 201
     assert response.data["detailed_product"]["id"] == sample_detailed_product_for_cart.id
@@ -178,19 +177,16 @@ def test_인증_장바구니_조회시_상세상품_정보가_포함된다(
     Then: 상세 상품의 색상/사이즈 정보가 포함된다
     """
     # Given - 상세 상품을 장바구니에 담기
-    payload = {
-        "detailed_product_id": sample_detailed_product_for_cart.id,
-        "quantity": 1
-    }
+    payload = {"detailed_product_id": sample_detailed_product_for_cart.id, "quantity": 1}
     add_detailed_to_cart(payload)
-    
+
     # When
     response = get_cart()
-    
+
     # Then
     assert response.status_code == 200
     assert len(response.data["items"]) >= 1
-    
+
     item = response.data["items"][0]
     assert "detailed_product" in item
     assert item["detailed_product"]["color_name"] == "블랙"

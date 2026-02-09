@@ -1,9 +1,10 @@
 """
 Postings 앱 모델 (후기 및 댓글)
 """
-from django.db import models
+
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 from apps.core.models import TimeStampedModel
 
@@ -12,23 +13,20 @@ class Posting(TimeStampedModel):
     """
     상품 후기
     """
+
     product = models.ForeignKey(
-        "products.Product",
-        on_delete=models.CASCADE,
-        related_name="postings",
-        verbose_name="상품"
+        "products.Product", on_delete=models.CASCADE, related_name="postings", verbose_name="상품"
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="postings",
-        verbose_name="작성자"
+        verbose_name="작성자",
     )
     title = models.CharField(max_length=200, verbose_name="제목")
     content = models.TextField(verbose_name="내용")
     rating = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        verbose_name="평점"
+        validators=[MinValueValidator(1), MaxValueValidator(5)], verbose_name="평점"
     )
 
     class Meta:
@@ -45,17 +43,15 @@ class Comment(TimeStampedModel):
     """
     후기에 대한 댓글
     """
+
     posting = models.ForeignKey(
-        Posting,
-        on_delete=models.CASCADE,
-        related_name="comments",
-        verbose_name="후기"
+        Posting, on_delete=models.CASCADE, related_name="comments", verbose_name="후기"
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="comments",
-        verbose_name="작성자"
+        verbose_name="작성자",
     )
     content = models.TextField(verbose_name="내용")
 

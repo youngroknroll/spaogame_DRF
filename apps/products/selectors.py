@@ -3,10 +3,11 @@ Products 도메인 조회 로직
 
 Selector Layer는 조회 로직을 분리하고 N+1 쿼리를 최적화합니다.
 """
-from django.db.models import Count, Avg, Prefetch
+
+from django.db.models import Avg, Count, Prefetch
 from django.shortcuts import get_object_or_404
 
-from .models import Product, Menu, Category, DetailedProduct, Image
+from .models import Category, DetailedProduct, Image, Menu, Product
 
 
 class ProductSelector:
@@ -33,17 +34,18 @@ class ProductSelector:
             qs = qs.filter(category_id=category_id)
 
         # N+1 최적화: 통계 정보를 한 번에 조회
-        qs = qs.annotate(
-            _posting_count=Count('postings', distinct=True),
-            _average_rating=Avg('postings__rating')
-        ).select_related(
-            'menu',
-            'category'
-        ).prefetch_related(
-            Prefetch(
-                'images',
-                queryset=Image.objects.filter(is_thumbnail=True),
-                to_attr='thumbnail_images'
+        qs = (
+            qs.annotate(
+                _posting_count=Count("postings", distinct=True),
+                _average_rating=Avg("postings__rating"),
+            )
+            .select_related("menu", "category")
+            .prefetch_related(
+                Prefetch(
+                    "images",
+                    queryset=Image.objects.filter(is_thumbnail=True),
+                    to_attr="thumbnail_images",
+                )
             )
         )
 
@@ -60,20 +62,21 @@ class ProductSelector:
         Returns:
             Product: 상품 객체 (연관 데이터 포함)
         """
-        queryset = Product.objects.annotate(
-            _posting_count=Count('postings', distinct=True),
-            _average_rating=Avg('postings__rating')
-        ).select_related(
-            'menu',
-            'category'
-        ).prefetch_related(
-            'images',
-            Prefetch(
-                'detailed_products',
-                queryset=DetailedProduct.objects.select_related('color', 'size')
-            ),
-            'postings__user',
-            'postings__comments__user'
+        queryset = (
+            Product.objects.annotate(
+                _posting_count=Count("postings", distinct=True),
+                _average_rating=Avg("postings__rating"),
+            )
+            .select_related("menu", "category")
+            .prefetch_related(
+                "images",
+                Prefetch(
+                    "detailed_products",
+                    queryset=DetailedProduct.objects.select_related("color", "size"),
+                ),
+                "postings__user",
+                "postings__comments__user",
+            )
         )
 
         return get_object_or_404(queryset, id=product_id)
@@ -88,13 +91,11 @@ class ProductSelector:
         """
         return Product.objects.prefetch_related(
             Prefetch(
-                'images',
+                "images",
                 queryset=Image.objects.filter(is_thumbnail=True),
-                to_attr='thumbnail_images'
+                to_attr="thumbnail_images",
             )
-        ).annotate(
-            _posting_count=Count('postings', distinct=True)
-        )
+        ).annotate(_posting_count=Count("postings", distinct=True))
 
 
 class MenuSelector:
@@ -121,10 +122,7 @@ class MenuSelector:
         Returns:
             Menu: 메뉴 객체 (카테고리 포함)
         """
-        return get_object_or_404(
-            Menu.objects.prefetch_related('categories'),
-            id=menu_id
-        )
+        return get_object_or_404(Menu.objects.prefetch_related("categories"), id=menu_id)
 
     @staticmethod
     def get_categories_by_menu(menu_id):

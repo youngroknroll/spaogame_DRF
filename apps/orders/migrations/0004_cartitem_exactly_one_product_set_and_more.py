@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("orders", "0003_wishlist"),
         ("products", "0004_add_detailed_domain"),
@@ -15,12 +14,8 @@ class Migration(migrations.Migration):
             model_name="cartitem",
             constraint=models.CheckConstraint(
                 condition=models.Q(
-                    models.Q(
-                        ("detailed_product__isnull", True), ("product__isnull", False)
-                    ),
-                    models.Q(
-                        ("detailed_product__isnull", False), ("product__isnull", True)
-                    ),
+                    models.Q(("detailed_product__isnull", True), ("product__isnull", False)),
+                    models.Q(("detailed_product__isnull", False), ("product__isnull", True)),
                     _connector="OR",
                 ),
                 name="exactly_one_product_set",

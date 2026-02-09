@@ -1,14 +1,16 @@
 """
 Users 앱 테스트 픽스처
 """
+
 import pytest
+
 from apps.conftest import (
-    API_USERS_SIGNUP,
-    API_USERS_LOGIN,
     API_USERS_GENDERS,
+    API_USERS_LOGIN,
+    API_USERS_SIGNUP,
     TEST_USER_EMAIL,
-    TEST_USER_PASSWORD,
     TEST_USER_NAME,
+    TEST_USER_PASSWORD,
 )
 
 
@@ -41,8 +43,10 @@ def full_signup_payload():
 @pytest.fixture
 def signup(api_client, db):
     """회원가입 요청 헬퍼 (DB 접근 필요)"""
+
     def _signup(payload):
         return api_client.post(API_USERS_SIGNUP, payload)
+
     return _signup
 
 
@@ -56,14 +60,18 @@ def registered_user(signup, valid_signup_payload):
 @pytest.fixture
 def login(api_client, db):
     """로그인 요청 헬퍼 (DB 접근 필요)"""
+
     def _login(credentials):
         return api_client.post(API_USERS_LOGIN, credentials)
+
     return _login
 
 
 @pytest.fixture
 def get_genders(api_client):
     """성별 목록 조회 헬퍼"""
+
     def _get_genders():
         return api_client.get(API_USERS_GENDERS)
+
     return _get_genders

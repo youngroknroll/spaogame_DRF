@@ -1,10 +1,11 @@
 """
 Users 프로필 조회/수정 테스트
 """
+
 import pytest
 from rest_framework import status
-from apps.conftest import TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_NAME
 
+from apps.conftest import TEST_USER_EMAIL, TEST_USER_NAME
 
 API_USERS_PROFILE = "/api/users/profile/"
 
@@ -12,16 +13,20 @@ API_USERS_PROFILE = "/api/users/profile/"
 @pytest.fixture
 def get_profile(api_client):
     """프로필 조회 헬퍼"""
+
     def _get_profile():
         return api_client.get(API_USERS_PROFILE)
+
     return _get_profile
 
 
 @pytest.fixture
 def update_profile(api_client):
     """프로필 수정 헬퍼"""
+
     def _update_profile(payload):
         return api_client.patch(API_USERS_PROFILE, payload)
+
     return _update_profile
 
 

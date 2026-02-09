@@ -10,9 +10,7 @@ def test_인증_로그인한_사용자는_위시리스트에_상품을_추가할
     Then: 위시리스트에 상품이 추가된다
     """
     # Given
-    payload = {
-        "product_id": sample_product.id
-    }
+    payload = {"product_id": sample_product.id}
 
     # When
     response = add_to_wishlist(payload)

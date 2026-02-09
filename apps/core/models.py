@@ -1,6 +1,7 @@
 """
 공통 추상 모델
 """
+
 from django.db import models
 
 

@@ -4,12 +4,15 @@ Postings 도메인 비즈니스 로직
 Service Layer는 비즈니스 규칙과 트랜잭션 경계를 담당합니다.
 View는 HTTP 처리만, Service는 도메인 로직만 담당합니다.
 """
+
 import logging
+
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
-from .models import Posting, Comment
 from apps.products.models import Product
+
+from .models import Comment, Posting
 
 logger = logging.getLogger(__name__)
 
@@ -41,16 +44,11 @@ class PostingService:
         product = get_object_or_404(Product, id=product_id)
 
         posting = Posting.objects.create(
-            user=user,
-            product=product,
-            title=title,
-            content=content,
-            rating=rating
+            user=user, product=product, title=title, content=content, rating=rating
         )
 
         logger.info(
-            f"후기 생성 완료: user={user.email}, posting_id={posting.id}, "
-            f"product_id={product_id}"
+            f"후기 생성 완료: user={user.email}, posting_id={posting.id}, product_id={product_id}"
         )
 
         return posting
@@ -145,21 +143,14 @@ class CommentService:
         Returns:
             Comment: 생성된 댓글
         """
-        logger.info(
-            f"댓글 생성 시도: user={user.email}, posting_id={posting_id}"
-        )
+        logger.info(f"댓글 생성 시도: user={user.email}, posting_id={posting_id}")
 
         posting = get_object_or_404(Posting, id=posting_id)
 
-        comment = Comment.objects.create(
-            user=user,
-            posting=posting,
-            content=content
-        )
+        comment = Comment.objects.create(user=user, posting=posting, content=content)
 
         logger.info(
-            f"댓글 생성 완료: user={user.email}, comment_id={comment.id}, "
-            f"posting_id={posting_id}"
+            f"댓글 생성 완료: user={user.email}, comment_id={comment.id}, posting_id={posting_id}"
         )
 
         return comment
@@ -181,15 +172,10 @@ class CommentService:
         from rest_framework.exceptions import PermissionDenied
 
         logger.info(
-            f"댓글 삭제 시도: user={user.email}, posting_id={posting_id}, "
-            f"comment_id={comment_id}"
+            f"댓글 삭제 시도: user={user.email}, posting_id={posting_id}, comment_id={comment_id}"
         )
 
-        comment = get_object_or_404(
-            Comment,
-            id=comment_id,
-            posting_id=posting_id
-        )
+        comment = get_object_or_404(Comment, id=comment_id, posting_id=posting_id)
 
         # 권한 검증: Service Layer에서 수행
         if comment.user != user:

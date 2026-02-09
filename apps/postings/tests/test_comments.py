@@ -14,11 +14,10 @@ def test_사용자는_특정_후기의_댓글_목록을_조회할_수_있다(
     from apps.conftest import API_COMMENTS
 
     # Given - 후기 작성
-    posting_response = create_posting(sample_product.id, {
-        "title": "맛있어요!",
-        "content": "정말 맛있게 잘 먹었습니다.",
-        "rating": 5
-    })
+    posting_response = create_posting(
+        sample_product.id,
+        {"title": "맛있어요!", "content": "정말 맛있게 잘 먹었습니다.", "rating": 5},
+    )
     posting_id = posting_response.data["id"]
 
     # 댓글 3개 작성
@@ -48,19 +47,16 @@ def test_인증_로그인한_사용자는_후기에_댓글을_작성할_수_있�
     Then: 댓글이 생성된다
     """
     # Given - 후기 작성
-    posting_response = create_posting(sample_product.id, {
-        "title": "맛있어요!",
-        "content": "정말 맛있게 잘 먹었습니다.",
-        "rating": 5
-    })
+    posting_response = create_posting(
+        sample_product.id,
+        {"title": "맛있어요!", "content": "정말 맛있게 잘 먹었습니다.", "rating": 5},
+    )
     posting_id = posting_response.data["id"]
-    
+
     # When - 댓글 작성
-    comment_payload = {
-        "content": "저도 먹어보고 싶네요!"
-    }
+    comment_payload = {"content": "저도 먹어보고 싶네요!"}
     response = create_comment(posting_id, comment_payload)
-    
+
     # Then
     assert response.status_code == 201
     assert response.data["content"] == "저도 먹어보고 싶네요!"
@@ -75,19 +71,18 @@ def test_권한_댓글_작성자는_자신의_댓글을_삭제할_수_있다(
     Then: 댓글이 삭제된다
     """
     # Given - 후기 및 댓글 작성
-    posting_response = create_posting(sample_product.id, {
-        "title": "맛있어요!",
-        "content": "정말 맛있게 잘 먹었습니다.",
-        "rating": 5
-    })
+    posting_response = create_posting(
+        sample_product.id,
+        {"title": "맛있어요!", "content": "정말 맛있게 잘 먹었습니다.", "rating": 5},
+    )
     posting_id = posting_response.data["id"]
-    
+
     comment_response = create_comment(posting_id, {"content": "좋은 후기!"})
     comment_id = comment_response.data["id"]
-    
+
     # When - 댓글 삭제
     response = delete_comment(posting_id, comment_id)
-    
+
     # Then
     assert response.status_code == 204
 
@@ -100,39 +95,42 @@ def test_권한_댓글_작성자가_아닌_사용자는_댓글을_삭제할_수_
     When: 다른 사용자가 댓글을 삭제하려고 하면
     Then: 권한 오류가 발생한다
     """
-    from apps.conftest import ADMIN_EMAIL, ADMIN_PASSWORD, API_USERS_LOGIN, API_COMMENT
     from django.contrib.auth import get_user_model
-    
+
+    from apps.conftest import ADMIN_EMAIL, ADMIN_PASSWORD, API_COMMENT, API_USERS_LOGIN
+
     User = get_user_model()
-    
+
     # Given - 첫 번째 사용자가 후기와 댓글 작성
-    posting_response = create_posting(sample_product.id, {
-        "title": "맛있어요!",
-        "content": "정말 맛있게 잘 먹었습니다.",
-        "rating": 5
-    })
+    posting_response = create_posting(
+        sample_product.id,
+        {"title": "맛있어요!", "content": "정말 맛있게 잘 먹었습니다.", "rating": 5},
+    )
     posting_id = posting_response.data["id"]
-    
+
     comment_response = create_comment(posting_id, {"content": "좋은 후기!"})
     comment_id = comment_response.data["id"]
-    
+
     # 두 번째 사용자(admin) 로그인
-    admin_user = User.objects.create_user(
+    _admin_user = User.objects.create_user(
         email=ADMIN_EMAIL,
         password=ADMIN_PASSWORD,
         name="관리자",
         is_staff=True,
     )
-    login_response = api_client.post(API_USERS_LOGIN, {
-        "email": ADMIN_EMAIL,
-        "password": ADMIN_PASSWORD,
-    })
+    login_response = api_client.post(
+        API_USERS_LOGIN,
+        {
+            "email": ADMIN_EMAIL,
+            "password": ADMIN_PASSWORD,
+        },
+    )
     admin_token = login_response.data["access"]
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {admin_token}")
-    
+
     # When - 다른 사용자의 댓글을 삭제하려고 시도
     url = API_COMMENT.format(posting_id=posting_id, comment_id=comment_id)
     response = api_client.delete(url)
-    
+
     # Then - 403 권한 오류 발생
     assert response.status_code == 403
